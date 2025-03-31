@@ -1,0 +1,88 @@
+
+
+TEST:
+Load
+    CustomerName
+FROM [lib://somepath/customer.qvs](qvs)
+;
+
+
+"asdfasdfasfd"
+'asdfasdfasdf'
+
+Trace '$(vG.CH_GeneralLoadPath)';
+Trace '$(vG.GeneralLoadPath)';
+
+// comment
+/* INCLUDE ALL FIELS */
+$(Must_Include=[$(vAppScriptPath)/$(vCountry)/$(vApplicationId)/customer.qvs]);
+$(Must_Include=[$(vAppScriptPath)/$(vCountry)/$(vApplicationId)/product_priority_pivot.qvs]);
+$(Must_Include=[$(vAppScriptPath)/$(vCountry)/$(vApplicationId)/segmentation_calc.qvs]);
+
+from asdf asdföaksdföaksjfd 
+
+D_CUSTOMER_EXTENDED:
+    NoConcatenate
+    Load 
+        *
+        ,Floor(if(hco_MAT_sales>10000,$(HighAbs),if(hco_MAT_sales>5000 and hco_MAT_sales<=10000,$(MediumAbs),if(hco_MAT_sales<5000 and hco_MAT_sales > 1000,$(LowAbs),$(ZeroAbs)))) * 0.5 + Coalesce("Prescribing behaviour Gardasil9",0) * 0.5) as prescribing_behaviour
+        ,Floor(if(hco_MAT_sales>5000 ,$(HighAbs),if(hco_MAT_sales>2000 and hco_MAT_sales<=5000 ,$(MediumAbs),if(hco_MAT_sales<2000                         ,$(LowAbs),$(ZeroAbs)))) * 0.5 +          "prescribing behaviour Proquad"      * 0.5) as prescribing_behaviour_proquad
+        ,Floor(if(hco_MAT_sales>7000 ,$(HighAbs),if(hco_MAT_sales>3000 and hco_MAT_sales<=7000 ,$(MediumAbs),if(hco_MAT_sales<3000                         ,$(LowAbs),$(ZeroAbs)))) * 0.5 +          "prescribing behaviour vaxneuvance"  * 0.5) as prescribing_behaviour_vaxneuvance
+    resident Final_potential_HPV;
+
+SUB PRODUCT_PRIORITY_PIVOT
+
+    PRODUCT_PRIORITY_GENERIC:
+        LOAD
+            '' AS "%MDM Key"
+        INLINE [
+            %MDM Key
+            ''
+        ];
+
+    products_temp:
+        load
+            DISTINCT "product_name" as "GPP Product Name"
+        FROM [lib://$(vG.EulerMarketVersionLoadPathData)vw_f_product_target.qvd](qvd)
+        WHERE 
+        product_target_type = 'PRODUCT_PRIORITY'
+        AND country_code = '$(vCountry)'
+        AND $(vExcludeProducts)
+        ;
+    
+    product_priority_temp:
+        LOAD 
+            "country_code" & '-' & "cust_mdm_id"  as "%MDM Key",
+            "target_value",
+            "product_name"
+        FROM [lib://$(vG.EulerMarketVersionLoadPathData)vw_f_product_target.qvd](qvd)
+        WHERE 
+            product_target_type = 'PRODUCT_PRIORITY'
+            AND country_code = '$(vCountry)'
+            AND not isnull(cust_mdm_id)
+        ;
+    
+        FOR i = 0 to NoOfRows('products_temp') - 1
+            LET vCurrentProduct = Peek('GPP Product Name', i, 'products_temp');
+            
+            Trace '$(vCurrentProduct)';
+            
+            OUTER JOIN(PRODUCT_PRIORITY_GENERIC)
+            LOAD
+                "%MDM Key",
+                "target_value"                          as '$(vCurrentProduct)'
+            resident product_priority_temp
+            WHERE 
+                "product_name" = '$(vCurrentProduct)'
+                ;
+        NEXT
+
+        DROP TABLE products_temp;
+        DROP TABLE product_priority_temp;
+
+END SUB;
+
+
+CALL LOAD_CH_SALES;
+CALL LOAD_VACCINES_SEGMENATION;
+CALL VACCINES_SEGMENTATION_CALC;

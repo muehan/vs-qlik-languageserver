@@ -24,7 +24,7 @@ import {
 let client: LanguageClient;
 
 export function activate(context: ExtensionContext) {
-	console.log('init extension');
+	console.log('[Client] init extension');
 	// The server is implemented in node
 	const serverModule = context.asAbsolutePath(
 		path.join('server', 'out', 'server.js')
@@ -64,7 +64,6 @@ export function activate(context: ExtensionContext) {
 		},
 		legend
 	);
-
 
 	// Create the language client and start the client.
 	client = new LanguageClient(

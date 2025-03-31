@@ -42,6 +42,8 @@ const tokenModifiers: string[] = [];
 const legend: SemanticTokensLegend = { tokenTypes, tokenModifiers };
 
 connection.onInitialize((params: InitializeParams) => {
+
+	console.log("[Server] onInitialize");
 	const capabilities = params.capabilities;
 
 	// Does the client support the `workspace/configuration` request?
@@ -252,6 +254,7 @@ connection.onCompletionResolve(
 
 // Function to compute semantic tokens
 connection.onRequest("textDocument/semanticTokens/full", async (params) => {
+	console.log("[Server] onRequest textDocument/semanticTokens/full");
     const document = documents.get(params.textDocument.uri);
     if (!document) {return null;}
 
@@ -266,6 +269,7 @@ connection.onRequest("textDocument/semanticTokens/full", async (params) => {
         const keywordRegex = /\b(LOAD|SELECT|FROM|WHERE|IF|ELSE|LET)\b/g;
         let match;
         while ((match = keywordRegex.exec(line)) !== null) {
+			console.log("[Server] found keyword");
             builder.push(lineIndex, match.index, match[0].length, tokenTypes.indexOf("keyword"), 0);
         }
 
@@ -290,19 +294,22 @@ connection.onRequest("textDocument/semanticTokens/full", async (params) => {
         // Match comments (`//` for single-line comments)
         const commentRegex = /\/\/.*/g;
         while ((match = commentRegex.exec(line)) !== null) {
+			console.log("[Server] found comment");
             builder.push(lineIndex, match.index, match[0].length, tokenTypes.indexOf("comment"), 0);
         }
 
 		 // Match table name
-		//  const tableRegex = /^\s*(?!lib$)([a-zA-Z0-9_]+)/g;
-		const tableRegex = /Airports/g;
+		const tableRegex = /^\s*(?!lib$)([a-zA-Z0-9_]+)/g;
+		//const tableRegex = /Airports/g;
 		while ((match = tableRegex.exec(line)) !== null) {
-			console.log("found airport");
+			console.log("[Server] found table");
 			builder.push(lineIndex, match.index, match[0].length, tokenTypes.indexOf("table"), 0);
 		 }
     }
 
-    return builder.build();
+    const result = builder.build();
+    console.log("[Server] Sending tokens:", result);
+    return result;
 });
 
 

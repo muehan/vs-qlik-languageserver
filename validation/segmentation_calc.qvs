@@ -1,0 +1,461 @@
+
+//-------- COLIBRA START VARIABLE - DO NOT DELETE NOR add anything before
+SET vL.scriptFullNameStart='\\AWWEUQLKPRPS41\d\Projects\GHH_EUCIMBI\3.Include\6.Custom\4.Application\CH\TargetingAndSegmentation\segmentation_calc.qvs';
+
+SUB LOAD_CH_SALES
+    
+    set vEulerSalesFile = 'F_SALES_EULER_3L';
+    SALES_TEMP:
+        NoConcatenate
+        LOAD
+            EAN,
+            %SDI                    as "Cases BKey",
+            EAN                     as "Case Prod Key",
+            GLN,
+            // / if I want to include the GLN=0000000000000 sales > I need to use: ship_to_gln as GLN, 
+            BillingDate&GLN&EAN     as "%Key Description",
+            WHLS_CHANNEL            as "Sales Channel",                
+            'Sales'                 as "Cases Type",
+            'Sales'&[%SDI]          as "Cases BKey Thumb",
+            'Sales'                 as "Cases BKey Origin",
+            'Orders'                as CaseTypeGroup,
+            Units,
+            Sales,
+            if (BillingDate = '' or IsNull(BillingDate), Left(YearMonth,4) & '-' & right(YearMonth,2) & '-' & '01',  Left(BillingDate, 4) & '-' & Mid(BillingDate, 5, 2) & '-' & Right(BillingDate, 2)) as "Cases Date",
+            'Past Event'            as is_future_event,
+            Text(BillingYear & '-' & BillingMonth) as "Cases Year-Month",
+            Num#(Text(BillingYear & BillingMonth), '#', '.' , ',') as "CasesYearMonth",
+            Text(BillingYear) as "Cases Year"
+        FROM [lib://GHH_EUCIMBI_DATA_SALESCH_SS/2.QVD/3.Load/$(vEulerSalesFile).qvd](qvd)
+            WHERE BillingYear > '2021'
+        ; 
+        // remove GLN dupplicates:
+        LEFT JOIN(SALES_TEMP)
+            LOAD Distinct
+                extid as GLN,
+                "%MDM Key",
+                "%MDM Key"          as customer_check,
+                "Customer Type"
+            Resident D_CUSTOMER;
+        drop field GLN from SALES_TEMP; // remove duplicate customers due to GLN field << extid
+END SUB; 
+
+
+
+SUB LOAD_VACCINES_SEGMENATION
+
+    PRODUCT_TARGET:
+        LOAD
+            country_code & '-' & cust_mdm_id   as [MDM Key]
+            ,target_value                      as [Gardasil9 Potential value]
+        FROM [lib://$(vG.EulerMarketVersionLoadPathData)vw_f_product_target.qvd] //test
+        (qvd)
+            where "%Country Key"      = 'CH'
+        AND   product_target_type = 'Potential'
+        AND   product_name        = 'GARDASIL 9'
+        AND not isnull(cust_mdm_id)
+        ;
+
+        OUTER JOIN (PRODUCT_TARGET)
+        LOAD
+            country_code & '-' & cust_mdm_id  as [MDM Key]
+            ,target_value                     as [Prescribing behaviour Gardasil9 value]
+        FROM [lib://$(vG.EulerMarketVersionLoadPathData)vw_f_product_target.qvd]
+        (qvd)
+        where "%Country Key"      = 'CH'
+        AND   product_target_type = 'Segmentation'
+        AND   product_name        = 'GARDASIL 9'
+        AND not isnull(cust_mdm_id)
+        ;
+
+        OUTER JOIN (PRODUCT_TARGET)
+        LOAD
+            country_code & '-' & cust_mdm_id  as [MDM Key]
+            ,target_value                     as [Vaxneuvance Potential value]
+        FROM [lib://$(vG.EulerMarketVersionLoadPathData)vw_f_product_target.qvd](qvd)
+        where "%Country Key"      = 'CH'
+        AND   product_target_type = 'Potential'
+        AND   WildMatch(product_name,'VAXNEUVANCE*')
+        AND not isnull(cust_mdm_id)
+        ;
+
+        OUTER JOIN (PRODUCT_TARGET)
+        LOAD
+            country_code & '-' & cust_mdm_id  as [MDM Key]
+            ,target_value                     as [prescribing behaviour vaxneuvance]
+        FROM [lib://$(vG.EulerMarketVersionLoadPathData)vw_f_product_target.qvd](qvd)
+        where "%Country Key"      = 'CH'
+        AND   product_target_type = 'Segmentation'
+        AND   WildMatch(product_name,'VAXNEUVANCE*')
+        AND not isnull(cust_mdm_id)
+        ;
+
+        OUTER JOIN (PRODUCT_TARGET)
+        LOAD
+            country_code & '-' & cust_mdm_id  as [MDM Key]
+            ,target_value                     as [Proquad Potential value]
+        FROM [lib://$(vG.EulerMarketVersionLoadPathData)vw_f_product_target.qvd](qvd)
+        where "%Country Key"      = 'CH'
+        AND   product_target_type = 'Potential'
+        AND   product_name        = 'PROQUAD'
+        AND not isnull(cust_mdm_id)
+        ;
+
+        OUTER JOIN (PRODUCT_TARGET)
+        LOAD
+            country_code & '-' & cust_mdm_id  as [MDM Key]
+            ,target_value                     as [prescribing behaviour Proquad value]
+        FROM [lib://$(vG.EulerMarketVersionLoadPathData)vw_f_product_target.qvd](qvd)
+        where "%Country Key"      = 'CH'
+        AND   product_target_type = 'Segmentation'
+        AND   product_name        = 'PROQUAD'
+        AND not isnull(cust_mdm_id)
+        ;
+
+END SUB;
+
+
+SUB VACCINES_SEGMENTATION_CALC
+
+
+    Let vyearMonth = Date(AddMonths(MonthStart(Today()), -12), 'YYYYMM');
+    Let vyear_Month = Date(AddMonths(MonthStart(Today()), -12), 'YYYY-MM');
+
+    set HighAbs=10;
+    set MediumAbs=5;
+    set LowAbs=3;
+    set ZeroAbs=0;
+    $(v.vyear_Month)
+    $(vyear_Month)
+    Trace >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> YEAR MONTH: $(vyear_Month);
+
+
+    potential_mapping:
+        Load * Inline [
+        measure_pot,value
+        High,10
+        Medium,5
+        Low,3
+        N/A,0
+        Zero,0
+        ];
+
+    prescribing_mapping:
+        Load * Inline [
+        measure_pres,value
+        S-A,10
+        S-B,5
+        S-C,3
+        S-D,1
+        N/A,0
+        Zero,0
+        ];
+
+    // HMLZ:
+    //     Load * Inline [
+    //     measure_pot,min_value,max_value,abs_value
+    //     High,6,10,10
+    //     Medium,4,5.9,5
+    //     Low,1,3.9,3
+    //     NA,0,0.9,0
+    //     Zero,0,0.9,0
+    //     ];
+
+    // HMLZ2:
+    //     Load * Inline [
+    //     measure_pre,min_value,max_value,abs_value
+    //     High,6,10,10
+    //     Medium,4,5.9,5
+    //     Low,1,3.9,3
+    //     NA,0,0.9,0
+    //     Zero,0,0.9,0
+    //     ];
+
+    set vGPHighmin=121;
+    set vGPHighmax=500;
+    set vGPMediummin=81;
+    set vGPMediummax=120;
+    set vGPLowmin=1;
+    set vGPLowmax=80;
+
+    set vSPHighmin=71;
+    set vSPHighmax=500;
+    set vSPMediummin=41;
+    set vSPMediummax=70;
+    set vSPLowmin=1;
+    set vSPLowmax=40;
+
+
+    IQVIA_DATA_temp:
+       LOAD
+            @2                               as parent_gln,    // GLN Praxis
+            @11                              as patient_count, // Anzahl Patienten pro Tag (Siebenerskala)
+            if(
+                Index(@11,'bis',1)>=1,
+                subfield(@11,' ',1),
+                if(
+                    Index(@11,'>',1)>=1 or Index(@11,'<',1)>=1,
+                    subfield(@11,' ',2),0))
+                                             as min_p_value,
+            if(
+                Index(@11,'bis',1)>=1,
+                subfield(@11,' ',3),
+                if(
+                    Index(@11,'>',1)>=1 or Index(@11,'<',1)>=1,
+                    subfield(@11,' ',2),0)) 
+                                             as max_p_value,
+            Coalesce(@12,0)                  as total_hcp,     // Anzahl Ärzte Praxis
+            Coalesce(@13,0)+Coalesce(@15,0)  as hcp_GP,        // Anzahl FG Allgemeine Innere Medizin
+            Coalesce(@14,0)                  as hcp_gyn,       // Anzahl FG Gynäkologie
+            Coalesce(@15,0)                  as hcp_ped        // Anzahl FG Kinder- und  Jugendmedizin
+       FROM [lib://GHH_EUCIMBI_DATA_SALESCH_SS/8.Import/PCVACC/IQVIA_Praxisgroessen_2024-02-27.xlsx]
+       (ooxml, no labels, filters(Remove(Row, Pos(Top, 1))))
+       where RecNo()>=1;
+
+    IQVIA_DAT_temp2:
+        LOAD
+            *
+            ,Floor((min_p_value+max_p_value)/2)                  as average
+            ,Floor(Floor((min_p_value+max_p_value)/2)/total_hcp) as p_per_hcp
+        resident IQVIA_DATA_temp;           
+
+
+    TMP_GARDASIL_SALES:
+        NoConcatenate
+        LOAD
+            "%MDM Key",
+            sum(Sales) as gar_sales,
+            EAN
+        RESIDENT SALES_TEMP 
+        where 
+            IsNull(EAN) = 0 
+            and EAN <> 0 
+            and EAN <> '' 
+            //and "Cases Year-Month" > $(vyear_Month)
+            and Date#("Cases Year-Month", 'YYYY-mm') > '2023-12'
+        group by "%MDM Key",EAN ;
+        Inner JOIN
+        LOAD //EAN,Brand
+            distinct ean as EAN
+        //from  [lib://GHH_EUCIMBI_DATA_SALESCH_SS/2.QVD/3.Load/D_PRODUCTS.qvd] (qvd)
+        FROM [Lib://$(vG.EulerVersionLoadPathData)vw_d_sap_prod.qvd](qvd) //TODO: done
+                WHERE $(v.CountryFilter) and IsNull(ean) = 0 and ean <> 0 and ean <> '' and Trim(brand) = 'GARDASIL9'
+        ;
+        DROP FIELD EAN FROM TMP_GARDASIL_SALES;
+
+    TMP_PROQUAD_SALES:
+        NoConcatenate
+        LOAD
+            "%MDM Key",
+            sum(Sales) as pro_sales,
+            //"Cases Year-Month" as "sales_year_month",
+            //Date#("Cases Year-Month", 'YYYY-mm') as "sales_year_month",
+            EAN
+        RESIDENT SALES_TEMP 
+        where 
+            IsNull(EAN) = 0 and 
+            EAN <> 0 and 
+            EAN <> '' 
+            //and Date#("Cases Year-Month", 'YYYY-mm') > $(vyear_Month)
+            and Date#("Cases Year-Month", 'YYYY-mm') > '2023-12'
+        group by "%MDM Key",EAN; //,"Cases Year-Month";
+        Inner JOIN
+        LOAD //EAN,Brand
+            distinct ean as EAN
+            ,brand as sales_brand
+        //from  [lib://GHH_EUCIMBI_DATA_SALESCH_SS/2.QVD/3.Load/D_PRODUCTS.qvd] (qvd)
+        FROM [Lib://$(vG.EulerVersionLoadPathData)vw_d_sap_prod.qvd](qvd) //TODO: done
+                WHERE $(v.CountryFilter) and IsNull(ean) = 0 and ean <> 0 and ean <> '' and Trim(brand) = 'PROQUAD'
+        ;
+        DROP FIELD EAN FROM TMP_PROQUAD_SALES;
+        
+    TMP_VAXNEUVANCE_SALES:
+        NoConcatenate
+        LOAD
+            "%MDM Key",
+            sum(Sales) as var_sales,
+            EAN
+        RESIDENT SALES_TEMP 
+        where 
+            IsNull(EAN) = 0 
+            and EAN <> 0 
+            and EAN <> '' 
+            //and "Cases Year-Month" > $(vyear_Month)
+            and Date#("Cases Year-Month", 'YYYY-mm') > '2023-12'
+        group by "%MDM Key",EAN ;
+        Inner JOIN
+        LOAD //EAN,Brand
+            distinct ean as EAN
+        //from  [lib://GHH_EUCIMBI_DATA_SALESCH_SS/2.QVD/3.Load/D_PRODUCTS.qvd] (qvd)
+        FROM [Lib://$(vG.EulerVersionLoadPathData)vw_d_sap_prod.qvd](qvd) //TODO: done
+                WHERE $(v.CountryFilter) and IsNull(ean) = 0 and ean <> 0 and ean <> '' and Trim(brand) = 'VAXNEUVANCE'
+        ;
+        DROP FIELD EAN FROM TMP_VAXNEUVANCE_SALES;
+        
+
+    GARDASIL_SALES_HCP_TEMP:
+        NoConcatenate
+        //Load * Resident D_CUSTOMER;
+            Load
+            "%MDM Key"
+            ,"Customer Primary Parent Mdm Id"
+            Resident D_CUSTOMER;
+        left join 
+        LOAD
+            "%MDM Key" ,
+            sum(gar_sales) as hcp_MAT_sales_gardasil
+        Resident TMP_GARDASIL_SALES
+        group by "%MDM Key";
+
+
+    // PROQUAD_SALES_DEBUG:
+    // NoConcatenate
+    // //   Load
+    // //   "%MDM Key"
+    // //   ,"Customer Primary Parent Mdm Id"
+    // //  Resident D_CUSTOMER;
+    //   Load * Resident D_CUSTOMER;
+    //    left join 
+    //    LOAD
+    //       DISTINCT "%MDM Key"
+    //       ,sum(pro_sales)            as hcp_MAT_sales_proquad_debug
+    //       ,sales_brand               as sales_brand_debug
+    //   Resident TMP_PROQUAD_SALES
+    //   $(asdasdf)
+    //   group by "%MDM Key", sales_brand;
+    
+    
+
+    PRO_SALES_HCP_TEMP:
+        NoConcatenate
+        Load
+            "%MDM Key"
+            ,"Customer Primary Parent Mdm Id"
+            Resident D_CUSTOMER;
+        //   Load * Resident D_CUSTOMER;
+        left join 
+        LOAD
+            DISTINCT "%MDM Key",
+            sum(pro_sales)            as hcp_MAT_sales_proquad
+        Resident TMP_PROQUAD_SALES
+        group by "%MDM Key";
+    
+
+    
+    VAX_SALES_HCP_TEMP:
+        NoConcatenate
+        Load
+            "%MDM Key"
+            ,"Customer Primary Parent Mdm Id"
+            Resident D_CUSTOMER;
+        //Load * Resident D_CUSTOMER;
+        left join 
+        LOAD
+            "%MDM Key" ,
+            sum(var_sales) as hcp_MAT_sales_VAXNEUVANCE
+        Resident TMP_VAXNEUVANCE_SALES
+        group by "%MDM Key";
+    
+    
+    DROP FIELD var_sales FROM TMP_VAXNEUVANCE_SALES;
+    DROP FIELD pro_sales FROM TMP_PROQUAD_SALES;
+    DROP FIELD gar_sales FROM TMP_GARDASIL_SALES; 
+
+    GARDASIL_SALES_HCO:
+        NoConcatenate
+        Load 
+            "Customer Primary Parent Mdm Id"
+            ,sum(hcp_MAT_sales_gardasil) as hco_MAT_sales_gardasil 
+        Resident GARDASIL_SALES_HCP_TEMP 
+        group by "Customer Primary Parent Mdm Id";
+    
+    
+    PRO_SALES_HCO:
+        NoConcatenate
+        Load 
+            "Customer Primary Parent Mdm Id"
+            ,sum(hcp_MAT_sales_proquad) as hco_MAT_sales_proquad
+        Resident PRO_SALES_HCP_TEMP  
+        group by "Customer Primary Parent Mdm Id";
+    
+    
+    //DROP Field "Customer Primary Parent Mdm Id" from PRO_SALES_HCP_TEMP;
+    
+    VAXNEUVANCE_SALES_HCO:
+        NoConcatenate
+        Load 
+            "Customer Primary Parent Mdm Id",
+            sum(hcp_MAT_sales_VAXNEUVANCE) as hco_MAT_sales_VAXNEUVANCE
+        Resident VAX_SALES_HCP_TEMP 
+        group by "Customer Primary Parent Mdm Id";
+
+
+    Merge_Data_temp:
+        NoConcatenate
+        Load * Resident D_CUSTOMER;
+        left join 
+        Load gln as parent_gln,SubField("%MDM Key",'-',2) as "Customer Primary Parent Mdm Id" Resident D_CUSTOMER  WHERE "Customer Type"='ORG';
+        left join 
+        LOAD
+            *
+        resident IQVIA_DAT_temp2;
+
+    left join 
+    LOAD
+        "%MDM Key" ,
+        sum(Sales) as hcp_MAT_sales
+    Resident SALES_TEMP
+    where "Cases Year-Month" > $(vyear_Month)
+    group by "%MDM Key";
+    left join
+    LOAD
+        "MDM Key" as "%MDM Key"
+        ,ApplyMap('potential_mapping',   [Gardasil9 Potential value], 0)                   as [Gardasil9 Potential]
+        ,ApplyMap('prescribing_mapping', [Prescribing behaviour Gardasil9 value], 0)       as [Prescribing behaviour Gardasil9]
+        ,ApplyMap('potential_mapping',   [Vaxneuvance Potential value], 0)                 as [Vaxneuvance Potential]
+        ,ApplyMap('prescribing_mapping', [prescribing behaviour vaxneuvance], 0)           as [prescribing behaviour vaxneuvance]
+        ,ApplyMap('potential_mapping',   [Proquad Potential value], 0)                     as [Proquad Potential]
+        ,ApplyMap('prescribing_mapping', [prescribing behaviour Proquad value], 0)         as [prescribing behaviour Proquad]
+    Resident PRODUCT_TARGET;
+
+    Final_potential_HPV:
+        NoConcatenate
+        Load 
+            *,
+            "Gardasil9 Potential"     as potential,
+            "Vaxneuvance Potential"   as vax_potential,
+            "Proquad Potential"       as pro_potential
+        resident Merge_Data_temp //where carmen <> 1;
+    ;
+
+
+    left join
+    Load sum(hcp_MAT_sales) as hco_MAT_sales,"Customer Primary Parent Mdm Id"  
+    resident Merge_Data_temp group by "Customer Primary Parent Mdm Id";
+
+    D_CUSTOMER_EXTENDED:
+        NoConcatenate
+        Load 
+            *
+            ,Floor(if(hco_MAT_sales>10000,$(HighAbs),if(hco_MAT_sales>5000 and hco_MAT_sales<=10000,$(MediumAbs),if(hco_MAT_sales<5000 and hco_MAT_sales > 1000,$(LowAbs),$(ZeroAbs)))) * 0.5 + Coalesce("Prescribing behaviour Gardasil9",0) * 0.5) as prescribing_behaviour
+            ,Floor(if(hco_MAT_sales>5000 ,$(HighAbs),if(hco_MAT_sales>2000 and hco_MAT_sales<=5000 ,$(MediumAbs),if(hco_MAT_sales<2000                         ,$(LowAbs),$(ZeroAbs)))) * 0.5 +          "prescribing behaviour Proquad"      * 0.5) as prescribing_behaviour_proquad
+            ,Floor(if(hco_MAT_sales>7000 ,$(HighAbs),if(hco_MAT_sales>3000 and hco_MAT_sales<=7000 ,$(MediumAbs),if(hco_MAT_sales<3000                         ,$(LowAbs),$(ZeroAbs)))) * 0.5 +          "prescribing behaviour vaxneuvance"  * 0.5) as prescribing_behaviour_vaxneuvance
+        resident Final_potential_HPV;
+    
+    drop table PRODUCT_TARGET;
+    drop table IQVIA_DATA_temp,IQVIA_DAT_temp2;
+    //drop table IQVIA_DAT_temp3;
+    drop table SALES_TEMP;
+    drop table D_CUSTOMER,Merge_Data_temp;
+    drop table Final_potential_HPV;
+    // drop table HMLZ2,HMLZ:
+    drop table GARDASIL_SALES_HCP_TEMP;
+
+    drop table VAX_SALES_HCP_TEMP,TMP_GARDASIL_SALES,TMP_VAXNEUVANCE_SALES;
+    drop table TMP_PROQUAD_SALES;
+    drop table PRO_SALES_HCP_TEMP;
+
+END SUB;
+
+//-------- COLIBRA END VARIABLE - DO NOT DELETE NOR add anything after
+SET vL.scriptFullNameEnd='\\AWWEUQLKPRPS41\d\Projects\GHH_EUCIMBI\3.Include\6.Custom\4.Application\CH\TargetingAndSegmentation\segmentation_calc.qvs';
