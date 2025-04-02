@@ -56,21 +56,7 @@
 					"description": "Traces the communication between VS Code and the language server."
 				}
 			}
-		},
-		"themes": [
-			{
-				"label": "Qlik Language Server Theme",
-				"uiTheme": "vs-dark",
-				"path": "./themes/qlik-theme.json"
-			}
-		],
-		"iconThemes": [
-			{
-				"id": "qlikscript-icons",
-				"label": "QlikScript File Icons",
-				"path": "./themes/qlik-icon-theme.json"
-			}
-		]
+		}
 	},
 	"scripts": {
 		"vscode:prepublish": "npm run compile",

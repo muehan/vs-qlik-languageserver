@@ -24,6 +24,7 @@ import {
 let client: LanguageClient;
 
 export function activate(context: ExtensionContext) {
+	console.log('[Client] Activating extension...'); // Add this log
 	console.log('[Client] init extension');
 	// The server is implemented in node
 	const serverModule = context.asAbsolutePath(
@@ -53,7 +54,10 @@ export function activate(context: ExtensionContext) {
 		}
 	};
 
-	const legend = new SemanticTokensLegend(["keyword", "variable", "function", "string", "comment", "table"]);
+	const legend = new SemanticTokensLegend(
+		["keyword", "variable", "function", "string", "comment", "class"], // Token types
+		[] // Token modifiers
+	);
 
 	const provider = languages.registerDocumentSemanticTokensProvider(
 		{ language: "qvs" },
@@ -64,6 +68,8 @@ export function activate(context: ExtensionContext) {
 		},
 		legend
 	);
+
+	context.subscriptions.push(provider); // Ensure proper disposal of the provider
 
 	// Create the language client and start the client.
 	client = new LanguageClient(

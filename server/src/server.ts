@@ -36,7 +36,7 @@ let hasConfigurationCapability = false;
 let hasWorkspaceFolderCapability = false;
 let hasDiagnosticRelatedInformationCapability = false;
 
-const tokenTypes = ["keyword", "variable", "function", "string", "comment", "table"];
+const tokenTypes = ["keyword", "variable", "function", "string", "comment", "class"];
 const tokenModifiers: string[] = [];
 
 const legend: SemanticTokensLegend = { tokenTypes, tokenModifiers };
@@ -266,7 +266,7 @@ connection.onRequest("textDocument/semanticTokens/full", async (params) => {
         const line = lines[lineIndex];
 
         // Match keywords (example: "LOAD", "SELECT", "FROM")
-        const keywordRegex = /\b(LOAD|SELECT|FROM|WHERE|IF|ELSE|LET)\b/g;
+        const keywordRegex = /\b(LOAD|SELECT|FROM|WHERE|IF|ELSE|LET|SET|NoConcatenate|RESIDENT)\b/gi;
         let match;
         while ((match = keywordRegex.exec(line)) !== null) {
 			console.log("[Server] found keyword");
@@ -274,7 +274,7 @@ connection.onRequest("textDocument/semanticTokens/full", async (params) => {
         }
 
         // Match variables (example: variables starting with a `SET` statement)
-        const variableRegex = /\b(?:SET|LET)\s+([a-zA-Z_]*.[a-zA-Z0-9_]*)\b/g;
+        const variableRegex = /\b(?:SET|LET)\s+([a-zA-Z_]*.[a-zA-Z0-9_]*)\b/gi;
         while ((match = variableRegex.exec(line)) !== null) {
             builder.push(lineIndex, match.index, match[0].length, tokenTypes.indexOf("variable"), 0);
         }
@@ -299,11 +299,11 @@ connection.onRequest("textDocument/semanticTokens/full", async (params) => {
         }
 
 		 // Match table name
-		const tableRegex = /^\s*(?!lib$)([a-zA-Z0-9_]+)/g;
-		//const tableRegex = /Airports/g;
-		while ((match = tableRegex.exec(line)) !== null) {
-			console.log("[Server] found table");
-			builder.push(lineIndex, match.index, match[0].length, tokenTypes.indexOf("table"), 0);
+		const classRegex = /^\s*(?!lib$)([a-zA-Z0-9_]+:)/g;
+		//const classRegex = /Airports/g;
+		while ((match = classRegex.exec(line)) !== null) {
+			console.log("[Server] found class");
+			builder.push(lineIndex, match.index, match[0].length, tokenTypes.indexOf("class"), 0);
 		 }
     }
 
