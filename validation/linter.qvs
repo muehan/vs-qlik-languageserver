@@ -11,7 +11,10 @@ RESIDENT Final_potential_HPV;
 Airports:
 LOAD
     *
-FROM [lib://some/path/to/file.qvd](qvd);    
+    ,sum(asdf) as sum_asdf
+    ,Floor(1,2,3,4)
+    ,Floor(IF(1=2,1,2)) as Floor_test
+FROM [lib://some/path/o/file.qvd](qvd);    
 
 Test:
 LOAD

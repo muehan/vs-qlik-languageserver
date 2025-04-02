@@ -265,45 +265,76 @@ connection.onRequest("textDocument/semanticTokens/full", async (params) => {
     for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
         const line = lines[lineIndex];
 
+		let match;
+
+        // Match function names (simple example)
+        const functionRegex = /\b(?!IF\b)([A-Z_]+)\s*\(/gi; // Match function names followed by '('
+        while ((match = functionRegex.exec(line)) !== null) {
+			if(lineIndex === 16) {
+				console.log("[Server] match:", match);
+			}
+            builder.push(
+				lineIndex, 
+				match.index,
+				match[0].length -1,
+				tokenTypes.indexOf("function"), 
+				0);
+        }
+
         // Match keywords (example: "LOAD", "SELECT", "FROM")
         const keywordRegex = /\b(LOAD|SELECT|FROM|WHERE|IF|ELSE|LET|SET|NoConcatenate|RESIDENT)\b/gi;
-        let match;
         while ((match = keywordRegex.exec(line)) !== null) {
-			console.log("[Server] found keyword");
-            builder.push(lineIndex, match.index, match[0].length, tokenTypes.indexOf("keyword"), 0);
+            builder.push(
+				lineIndex, 
+				match.index, 
+				match[0].length, 
+				tokenTypes.indexOf("keyword"),
+				0);
         }
 
         // Match variables (example: variables starting with a `SET` statement)
         const variableRegex = /\b(?:SET|LET)\s+([a-zA-Z_]*.[a-zA-Z0-9_]*)\b/gi;
         while ((match = variableRegex.exec(line)) !== null) {
-            builder.push(lineIndex, match.index, match[0].length, tokenTypes.indexOf("variable"), 0);
-        }
-
-        // Match function names (simple example)
-        const functionRegex = /\b(SUM|AVG|COUNT|NOW|DATE)\b/g;
-        while ((match = functionRegex.exec(line)) !== null) {
-            builder.push(lineIndex, match.index, match[0].length, tokenTypes.indexOf("function"), 0);
+            builder.push(
+				lineIndex, 
+				match.index, 
+				match[0].length, 
+				tokenTypes.indexOf("variable"), 
+				0);
         }
 
         // Match strings (anything between double quotes or single quotes)
         const stringRegex = /(["'])(?:(?=(\\?))\2.)*?\1/g;
         while ((match = stringRegex.exec(line)) !== null) {
-            builder.push(lineIndex, match.index, match[0].length, tokenTypes.indexOf("string"), 0);
+            builder.push(
+				lineIndex,
+				match.index,
+				match[0].length,
+				tokenTypes.indexOf("string"),
+				0);
         }
 
         // Match comments (`//` for single-line comments)
         const commentRegex = /\/\/.*/g;
         while ((match = commentRegex.exec(line)) !== null) {
-			console.log("[Server] found comment");
-            builder.push(lineIndex, match.index, match[0].length, tokenTypes.indexOf("comment"), 0);
+            builder.push(
+				lineIndex,
+				match.index,
+				match[0].length,
+				tokenTypes.indexOf("comment"),
+				0);
         }
 
 		 // Match table name
 		const classRegex = /^\s*(?!lib$)([a-zA-Z0-9_]+:)/g;
 		//const classRegex = /Airports/g;
 		while ((match = classRegex.exec(line)) !== null) {
-			console.log("[Server] found class");
-			builder.push(lineIndex, match.index, match[0].length, tokenTypes.indexOf("class"), 0);
+			builder.push(
+				lineIndex,
+				match.index,
+				match[0].length,
+				tokenTypes.indexOf("class"),
+				0);
 		 }
     }
 
