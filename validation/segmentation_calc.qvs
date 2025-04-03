@@ -122,8 +122,8 @@ SUB VACCINES_SEGMENTATION_CALC
     Let vyear_Month = Date(AddMonths(MonthStart(Today()), -12), 'YYYY-MM');
 
     set HighAbs=10;
-    set MediumAbs=5;
-    set LowAbs=3;
+    SET MediumAbs=5;
+    Set LowAbs=3;
     set ZeroAbs=0;
     $(v.vyear_Month)
     $(vyear_Month)

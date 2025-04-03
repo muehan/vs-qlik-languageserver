@@ -270,15 +270,17 @@ connection.onRequest("textDocument/semanticTokens/full", async (params) => {
             let match;
             while ((match = regex.exec(line)) !== null) {
                 if (match.index >= 0) {
-                    matches.push({ index: match.index, length: match[0].length, tokenType });
+                    matches.push({ index: match.index, length: tokenType == "function" ? match[0].length -1 : match[0].length, tokenType });
                 }
             }
         };
 
         // Collect matches for all token types
-        collectMatches(/\b(LOAD|SELECT|FROM|WHERE|IF|ELSE|LET|SET|NoConcatenate|RESIDENT)\b/gi, "keyword");
+        collectMatches(/\b(LOAD|SELECT|FROM|WHERE|JOIN|DROP|SUB|INLINE|FIELD|TABLE|INNER|OUTER|IF|ELSE|LET|SET|AND|OR|NoConcatenate|RESIDENT)\b/gi, "keyword");
         collectMatches(/\b(?!IF\b)([A-Z_]+)\s*\(/gi, "function");
-        collectMatches(/\b(?:SET|LET)\s+([a-zA-Z_]*.[a-zA-Z0-9_]*)\b/gi, "variable");
+        // collectMatches(/\b(?:SET|LET)\s+([a-zA-Z_]*.[a-zA-Z0-9_]*)\b/gi, "variable");
+        collectMatches(/\b(?<=\b(?:SET|LET)\s)[a-zA-Z_]*\.?([a-zA-Z0-9_]*)\b/gi, "variable");
+        collectMatches(/(\$\([a-zA-Z0-9_.]*)\)/g, "variable"); // variables with $(variable)
         collectMatches(/(["'])(?:(?=(\\?))\2.)*?\1/g, "string");
         collectMatches(/\/\/.*/g, "comment");
         collectMatches(/^\s*(?!lib$)([a-zA-Z0-9_]+:)/g, "class");
