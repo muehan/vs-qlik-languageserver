@@ -251,12 +251,11 @@ connection.onCompletionResolve(
 		return item;
 	}
 );
-
 // Function to compute semantic tokens
 connection.onRequest("textDocument/semanticTokens/full", async (params) => {
-	console.log("[Server] onRequest textDocument/semanticTokens/full");
+    console.log("[Server] onRequest textDocument/semanticTokens/full");
     const document = documents.get(params.textDocument.uri);
-    if (!document) {return null;}
+    if (!document) { return null; }
 
     const builder = new SemanticTokensBuilder();
     const text = document.getText();
@@ -264,85 +263,39 @@ connection.onRequest("textDocument/semanticTokens/full", async (params) => {
 
     for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
         const line = lines[lineIndex];
+        let matches:any[] = [];
 
-		let match;
+        // Helper function to collect matches
+        const collectMatches = (regex:any, tokenType:any) => {
+            let match;
+            while ((match = regex.exec(line)) !== null) {
+                if (match.index >= 0) {
+                    matches.push({ index: match.index, length: match[0].length, tokenType });
+                }
+            }
+        };
 
-        // Match function names (simple example)
-        const functionRegex = /\b(?!IF\b)([A-Z_]+)\s*\(/gi; // Match function names followed by '('
-        while ((match = functionRegex.exec(line)) !== null) {
-			if(lineIndex === 16) {
-				console.log("[Server] match:", match);
-			}
-            builder.push(
-				lineIndex, 
-				match.index,
-				match[0].length -1,
-				tokenTypes.indexOf("function"), 
-				0);
-        }
+        // Collect matches for all token types
+        collectMatches(/\b(LOAD|SELECT|FROM|WHERE|IF|ELSE|LET|SET|NoConcatenate|RESIDENT)\b/gi, "keyword");
+        collectMatches(/\b(?!IF\b)([A-Z_]+)\s*\(/gi, "function");
+        collectMatches(/\b(?:SET|LET)\s+([a-zA-Z_]*.[a-zA-Z0-9_]*)\b/gi, "variable");
+        collectMatches(/(["'])(?:(?=(\\?))\2.)*?\1/g, "string");
+        collectMatches(/\/\/.*/g, "comment");
+        collectMatches(/^\s*(?!lib$)([a-zA-Z0-9_]+:)/g, "class");
 
-        // Match keywords (example: "LOAD", "SELECT", "FROM")
-        const keywordRegex = /\b(LOAD|SELECT|FROM|WHERE|IF|ELSE|LET|SET|NoConcatenate|RESIDENT)\b/gi;
-        while ((match = keywordRegex.exec(line)) !== null) {
-            builder.push(
-				lineIndex, 
-				match.index, 
-				match[0].length, 
-				tokenTypes.indexOf("keyword"),
-				0);
-        }
+        // Sort matches by index to ensure correct ordering
+        matches.sort((a, b) => a.index - b.index);
 
-        // Match variables (example: variables starting with a `SET` statement)
-        const variableRegex = /\b(?:SET|LET)\s+([a-zA-Z_]*.[a-zA-Z0-9_]*)\b/gi;
-        while ((match = variableRegex.exec(line)) !== null) {
-            builder.push(
-				lineIndex, 
-				match.index, 
-				match[0].length, 
-				tokenTypes.indexOf("variable"), 
-				0);
-        }
-
-        // Match strings (anything between double quotes or single quotes)
-        const stringRegex = /(["'])(?:(?=(\\?))\2.)*?\1/g;
-        while ((match = stringRegex.exec(line)) !== null) {
-            builder.push(
-				lineIndex,
-				match.index,
-				match[0].length,
-				tokenTypes.indexOf("string"),
-				0);
-        }
-
-        // Match comments (`//` for single-line comments)
-        const commentRegex = /\/\/.*/g;
-        while ((match = commentRegex.exec(line)) !== null) {
-            builder.push(
-				lineIndex,
-				match.index,
-				match[0].length,
-				tokenTypes.indexOf("comment"),
-				0);
-        }
-
-		 // Match table name
-		const classRegex = /^\s*(?!lib$)([a-zA-Z0-9_]+:)/g;
-		//const classRegex = /Airports/g;
-		while ((match = classRegex.exec(line)) !== null) {
-			builder.push(
-				lineIndex,
-				match.index,
-				match[0].length,
-				tokenTypes.indexOf("class"),
-				0);
-		 }
+        // Push tokens to builder
+        matches.forEach(({ index, length, tokenType }) => {
+            builder.push(lineIndex, index, length, tokenTypes.indexOf(tokenType), 0);
+        });
     }
 
     const result = builder.build();
     console.log("[Server] Sending tokens:", result);
     return result;
 });
-
 
 // Make the text document manager listen on the connection
 // for open, change and close text document events
