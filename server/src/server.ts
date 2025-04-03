@@ -276,7 +276,7 @@ connection.onRequest("textDocument/semanticTokens/full", async (params) => {
         };
 
         // Collect matches for all token types
-        collectMatches(/\b(LOAD|SELECT|FROM|WHERE|JOIN|DROP|SUB|INLINE|FIELD|TABLE|INNER|OUTER|IF|ELSE|LET|SET|AND|OR|NoConcatenate|RESIDENT)\b/gi, "keyword");
+        collectMatches(/\b(LOAD|SELECT|FROM|WHERE|JOIN|DROP|SUB|END|INLINE|FIELD|TABLE|INNER|OUTER|IF|ELSE|LET|SET|AND|OR|NoConcatenate|RESIDENT)\b/gi, "keyword");
         collectMatches(/\b(?!IF\b)([A-Z_]+)\s*\(/gi, "function");
         // collectMatches(/\b(?:SET|LET)\s+([a-zA-Z_]*.[a-zA-Z0-9_]*)\b/gi, "variable");
         collectMatches(/\b(?<=\b(?:SET|LET)\s)[a-zA-Z_]*\.?([a-zA-Z0-9_]*)\b/gi, "variable");
