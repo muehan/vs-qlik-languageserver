@@ -55,7 +55,7 @@ export function activate(context: ExtensionContext) {
 	};
 
 	const legend = new SemanticTokensLegend(
-		["keyword", "variable", "function", "string", "comment", "class"], // Token types
+		["keyword", "variable", "function", "string", "comment", "class", "parameter"], // Token types
 		[] // Token modifiers
 	);
 

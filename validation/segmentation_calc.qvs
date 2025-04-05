@@ -79,6 +79,7 @@ SUB LOAD_VACCINES_SEGMENATION
         AND not isnull(cust_mdm_id)
         ;
 
+
         OUTER JOIN (PRODUCT_TARGET)
         LOAD
             country_code & '-' & cust_mdm_id  as [MDM Key]
