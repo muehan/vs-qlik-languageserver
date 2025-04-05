@@ -22,8 +22,8 @@ SUB LOAD_CH_SALES
             Units,
             Sales,
             if (BillingDate = '' or IsNull(BillingDate), Left(YearMonth,4) & '-' & right(YearMonth,2) & '-' & '01',  Left(BillingDate, 4) & '-' & Mid(BillingDate, 5, 2) & '-' & Right(BillingDate, 2)) as "Cases Date",
-            'Past Event'            as is_future_event,
-            Text(BillingYear & '-' & BillingMonth) as "Cases Year-Month",
+            'Past Event'                                           as is_future_event,
+            Text(BillingYear & '-' & BillingMonth)                 as "Cases Year-Month",
             Num#(Text(BillingYear & BillingMonth), '#', '.' , ',') as "CasesYearMonth",
             Text(BillingYear) as "Cases Year"
         FROM [lib://GHH_EUCIMBI_DATA_SALESCH_SS/2.QVD/3.Load/$(vEulerSalesFile).qvd](qvd)
@@ -39,7 +39,6 @@ SUB LOAD_CH_SALES
             Resident D_CUSTOMER;
         drop field GLN from SALES_TEMP; // remove duplicate customers due to GLN field << extid
 END SUB; 
-
 
 
 SUB LOAD_VACCINES_SEGMENATION

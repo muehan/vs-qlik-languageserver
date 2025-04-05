@@ -278,12 +278,13 @@ connection.onRequest("textDocument/semanticTokens/full", async (params) => {
 
         // Collect matches for all token types
         collectMatches(/\b(LOAD|SELECT|FROM|WHERE|JOIN|DROP|NOT|SUB|END|LEFT|INLINE|FIELD|TABLE|AS|INNER|OUTER|IF|ELSE|LET|SET|AND|OR|NoConcatenate|RESIDENT)\b/gi, "keyword");
-        collectMatches(/\b(?!IF\b)([A-Z_]+)\s*\(/gi, "function");
+        collectMatches(/\b(?!IF\b)([A-Z_#]+)\s*\(/gi, "function");
+		collectMatches(/\b(?<=\b(?:SUB)\s)([A-Z_#]+)\s*[\(]?/gi, "function");
         // collectMatches(/\b(?:SET|LET)\s+([a-zA-Z_]*.[a-zA-Z0-9_]*)\b/gi, "variable");
         collectMatches(/\b(?<=\b(?:SET|LET)\s)[a-zA-Z_]*\.?([a-zA-Z0-9_]*)\b/gi, "variable");
         collectMatches(/(\$\([a-zA-Z0-9_.]*)\)/g, "variable"); // variables with $(variable)
         collectMatches(/(["'])(?:(?=(\\?))\2.)*?\1/g, "string");
-		collectMatches(/\b(?<=\b(?:AS)\s)[a-zA-Z_]*\b/gi, "string");
+		collectMatches(/(?<=(?:AS)\s)[\["]?[a-zA-Z0-9_ ]*[\]"]?/gi, "string");
         collectMatches(/\/\/.*/g, "comment");
         collectMatches(/^\s*(?!lib$)([a-zA-Z0-9_]+:)/g, "class");
         collectMatches(/(?<=\(|,)\s*[^(),]+?\s*(?=,|\))/g, "parameter");
