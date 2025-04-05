@@ -36,7 +36,7 @@ let hasConfigurationCapability = false;
 let hasWorkspaceFolderCapability = false;
 let hasDiagnosticRelatedInformationCapability = false;
 
-const tokenTypes = ["keyword", "variable", "function", "string", "comment", "class", "parameter"];
+const tokenTypes = ["keyword", "variable", "function", "string", "comment", "class", "parameter", "property"];
 const tokenModifiers: string[] = [];
 
 const legend: SemanticTokensLegend = { tokenTypes, tokenModifiers };
@@ -280,6 +280,7 @@ connection.onRequest("textDocument/semanticTokens/full", async (params) => {
         collectMatches(/\b(LOAD|SELECT|FROM|WHERE|JOIN|DROP|NOT|SUB|END|LEFT|INLINE|FIELD|TABLE|AS|INNER|OUTER|IF|ELSE|LET|SET|AND|OR|NoConcatenate|RESIDENT)\b/gi, "keyword");
         collectMatches(/\b(?!IF\b)([A-Z_#]+)\s*\(/gi, "function");
 		collectMatches(/\b(?<=\b(?:SUB)\s)([A-Z_#]+)\s*[\(]?/gi, "function");
+		collectMatches(/\@([0-9]*)/g, "property");
         // collectMatches(/\b(?:SET|LET)\s+([a-zA-Z_]*.[a-zA-Z0-9_]*)\b/gi, "variable");
         collectMatches(/\b(?<=\b(?:SET|LET)\s)[a-zA-Z_]*\.?([a-zA-Z0-9_]*)\b/gi, "variable");
         collectMatches(/(\$\([a-zA-Z0-9_.]*)\)/g, "variable"); // variables with $(variable)
