@@ -36,7 +36,7 @@ let hasConfigurationCapability = false;
 let hasWorkspaceFolderCapability = false;
 let hasDiagnosticRelatedInformationCapability = false;
 
-const tokenTypes = ["keyword", "variable", "function", "string", "comment", "class", "parameter", "property"];
+const tokenTypes = ["keyword", "variable", "function", "string", "comment", "class", "parameter", "property", "decorator"];
 const tokenModifiers: string[] = [];
 
 const legend: SemanticTokensLegend = { tokenTypes, tokenModifiers };
@@ -282,7 +282,7 @@ connection.onRequest("textDocument/semanticTokens/full", async (params) => {
         // Collect matches for all token types
         collectMatches(/\b(?!IF|JOIN\b)([A-Z_#]+)\s*\(/gi, "function");
 		collectMatches(/\b(?<=\b(?:SUB)\s)([A-Z_#]+)\s*[\(]?/gi, "function");
-        collectMatches(/\b(LOAD|SELECT|DISTINCT|FROM|WHERE|JOIN|DROP|NOT|SUB|END|LEFT|INLINE|FIELD|TABLE|AS|INNER|OUTER|IF|ELSE|LET|SET|AND|OR|NoConcatenate|RESIDENT)\b/gi, "keyword");
+        collectMatches(/\b(LOAD|SELECT|TRACE|DISTINCT|FROM|WHERE|JOIN|DROP|NOT|SUB|END|GROUP|BY|LEFT|INLINE|FIELD|TABLE|AS|INNER|OUTER|IF|ELSE|LET|SET|AND|OR|NoConcatenate|RESIDENT)\b/gi, "keyword");
 		collectMatches(/\@([0-9]*)/g, "property");
         // collectMatches(/\b(?:SET|LET)\s+([a-zA-Z_]*.[a-zA-Z0-9_]*)\b/gi, "variable");
         collectMatches(/\b(?<=\b(?:SET|LET)\s)[a-zA-Z_]*\.?([a-zA-Z0-9_]*)\b/gi, "variable");
@@ -296,6 +296,7 @@ connection.onRequest("textDocument/semanticTokens/full", async (params) => {
         collectMatches(/(?<=(?:FROM)\s)[\w]+/g, "class");
         collectMatches(/(?<=(?:RESIDENT)\s)[\w]+/gi, "class");
         collectMatches(/(?<=\(|,)\s*[^(),]+?\s*(?=,|\))/g, "parameter");
+        collectMatches(/(?<=(?:trace)\s)[a-z0-9 >:$(_)]*/gi, "decorator");
 
         // Sort matches by index to ensure correct ordering
         matches.sort((a, b) => a.index - b.index);
