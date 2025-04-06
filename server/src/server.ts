@@ -282,7 +282,7 @@ connection.onRequest("textDocument/semanticTokens/full", async (params) => {
         // Collect matches for all token types
         collectMatches(/\b(?!IF|JOIN\b)([A-Z_#]+)\s*\(/gi, "function");
 		collectMatches(/\b(?<=\b(?:SUB)\s)([A-Z_#]+)\s*[\(]?/gi, "function");
-        collectMatches(/\b(LOAD|SELECT|FROM|WHERE|JOIN|DROP|NOT|SUB|END|LEFT|INLINE|FIELD|TABLE|AS|INNER|OUTER|IF|ELSE|LET|SET|AND|OR|NoConcatenate|RESIDENT)\b/gi, "keyword");
+        collectMatches(/\b(LOAD|SELECT|DISTINCT|FROM|WHERE|JOIN|DROP|NOT|SUB|END|LEFT|INLINE|FIELD|TABLE|AS|INNER|OUTER|IF|ELSE|LET|SET|AND|OR|NoConcatenate|RESIDENT)\b/gi, "keyword");
 		collectMatches(/\@([0-9]*)/g, "property");
         // collectMatches(/\b(?:SET|LET)\s+([a-zA-Z_]*.[a-zA-Z0-9_]*)\b/gi, "variable");
         collectMatches(/\b(?<=\b(?:SET|LET)\s)[a-zA-Z_]*\.?([a-zA-Z0-9_]*)\b/gi, "variable");
@@ -293,6 +293,8 @@ connection.onRequest("textDocument/semanticTokens/full", async (params) => {
         collectMatches(/\/\/.*/g, "comment"); // single line
         collectMatches(/\/\*[\s\S]*?\*\//g, "comment"); // multiline
         collectMatches(/^\s*(?!lib$)([a-zA-Z0-9_]+:)/g, "class");
+        collectMatches(/(?<=(?:FROM)\s)[\w]+/g, "class");
+        collectMatches(/(?<=(?:RESIDENT)\s)[\w]+/gi, "class");
         collectMatches(/(?<=\(|,)\s*[^(),]+?\s*(?=,|\))/g, "parameter");
 
         // Sort matches by index to ensure correct ordering

@@ -217,7 +217,7 @@ SUB VACCINES_SEGMENTATION_CALC
             *
             ,Floor((min_p_value+max_p_value)/2)                  as average
             ,Floor(Floor((min_p_value+max_p_value)/2)/total_hcp) as p_per_hcp
-        resident IQVIA_DATA_temp;           
+        resident IQVIA_DATA_temp;       
 
 
     TMP_GARDASIL_SALES:
