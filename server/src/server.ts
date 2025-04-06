@@ -264,29 +264,34 @@ connection.onRequest("textDocument/semanticTokens/full", async (params) => {
 
     for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
         const line = lines[lineIndex];
-        let matches:any[] = [];
+        const matches:any[] = [];
 
         // Helper function to collect matches
         const collectMatches = (regex:any, tokenType:any) => {
             let match;
             while ((match = regex.exec(line)) !== null) {
                 if (match.index >= 0) {
-                    matches.push({ index: match.index, length: tokenType == "function" ? match[0].length -1 : match[0].length, tokenType });
+                    matches.push({ 
+						index: match.index, 
+						length: tokenType == "function" ? match[0].length -1 : match[0].length, 
+						tokenType });
                 }
             }
         };
 
         // Collect matches for all token types
-        collectMatches(/\b(LOAD|SELECT|FROM|WHERE|JOIN|DROP|NOT|SUB|END|LEFT|INLINE|FIELD|TABLE|AS|INNER|OUTER|IF|ELSE|LET|SET|AND|OR|NoConcatenate|RESIDENT)\b/gi, "keyword");
-        collectMatches(/\b(?!IF\b)([A-Z_#]+)\s*\(/gi, "function");
+        collectMatches(/\b(?!IF|JOIN\b)([A-Z_#]+)\s*\(/gi, "function");
 		collectMatches(/\b(?<=\b(?:SUB)\s)([A-Z_#]+)\s*[\(]?/gi, "function");
+        collectMatches(/\b(LOAD|SELECT|FROM|WHERE|JOIN|DROP|NOT|SUB|END|LEFT|INLINE|FIELD|TABLE|AS|INNER|OUTER|IF|ELSE|LET|SET|AND|OR|NoConcatenate|RESIDENT)\b/gi, "keyword");
 		collectMatches(/\@([0-9]*)/g, "property");
         // collectMatches(/\b(?:SET|LET)\s+([a-zA-Z_]*.[a-zA-Z0-9_]*)\b/gi, "variable");
         collectMatches(/\b(?<=\b(?:SET|LET)\s)[a-zA-Z_]*\.?([a-zA-Z0-9_]*)\b/gi, "variable");
         collectMatches(/(\$\([a-zA-Z0-9_.]*)\)/g, "variable"); // variables with $(variable)
         collectMatches(/(["'])(?:(?=(\\?))\2.)*?\1/g, "string");
 		collectMatches(/(?<=(?:AS)\s)[\["]?[a-zA-Z0-9_ ]*[\]"]?/gi, "string");
-        collectMatches(/\/\/.*/g, "comment");
+		collectMatches(/\[lib:\/\/[^\]]*]/gi, "string");
+        collectMatches(/\/\/.*/g, "comment"); // single line
+        collectMatches(/\/\*[\s\S]*?\*\//g, "comment"); // multiline
         collectMatches(/^\s*(?!lib$)([a-zA-Z0-9_]+:)/g, "class");
         collectMatches(/(?<=\(|,)\s*[^(),]+?\s*(?=,|\))/g, "parameter");
 
