@@ -262,9 +262,48 @@ connection.onRequest("textDocument/semanticTokens/full", async (params) => {
     const text = document.getText();
     const lines = text.split("\n");
 
+	const tokenData: {
+        line: number;
+        startChar: number;
+        length: number;
+        tokenType: string;
+    }[] = [];
+
+	// === 1. Handle multi-line comments ===
+    const multiLineCommentRegex = /\/\*[\s\S]*?\*\//g;
+    let match;
+    while ((match = multiLineCommentRegex.exec(text)) !== null) {
+        const startOffset = match.index;
+        const endOffset = match.index + match[0].length;
+
+        const startPosition = document.positionAt(startOffset);
+        const endPosition = document.positionAt(endOffset);
+
+        if (startPosition.line !== endPosition.line) {
+            for (let line = startPosition.line; line <= endPosition.line; line++) {
+				console.log("[Server] Processing multi-line comment line:", line);
+                const lineStart = (line === startPosition.line) ? startPosition.character : 0;
+                const lineEnd = (line === endPosition.line)
+                    ? endPosition.character
+                    : lines[line].length;
+                tokenData.push({
+                    line,
+                    startChar: lineStart,
+                    length: lineEnd - lineStart,
+                    tokenType: "comment",
+                });
+            }
+        }
+    }
+
+	//  tokenData.forEach(({ line, startChar, length, tokenType }) => {
+	// 	builder.push(line, startChar, length, tokenTypes.indexOf(tokenType), 0);
+	// });
+
+
     for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
         const line = lines[lineIndex];
-        const matches:any[] = [];
+		const matches:any[] = [];
 
         // Helper function to collect matches
         const collectMatches = (regex:any, tokenType:any) => {
@@ -311,14 +350,25 @@ connection.onRequest("textDocument/semanticTokens/full", async (params) => {
 		collectMatches(/(?<=\(|,)\s*[^(),]+?\s*(?=,|\))/g, "parameter");
 		collectMatches(/(?<=(?:trace)\s)[a-z0-9 >:$(_)]*/gi, "decorator");
 
-        // Sort matches by index to ensure correct ordering
-        matches.sort((a, b) => a.index - b.index);
+			// Sort matches by index to ensure correct ordering
+		matches.sort((a, b) => a.index - b.index);
 
-        // Push tokens to builder
-        matches.forEach(({ index, length, tokenType }) => {
-            builder.push(lineIndex, index, length, tokenTypes.indexOf(tokenType), 0);
-        });
+		// Push tokens to builder
+		matches.forEach(({ index, length, tokenType }) => {
+			tokenData.push(
+				{
+					line: lineIndex, 
+					startChar: index, 
+					length: length,
+					tokenType: tokenType});
+		});
     }
+
+	tokenData.sort((a, b) => a.line - b.line);
+
+	tokenData.forEach(({ line, startChar, length, tokenType }) => {
+		builder.push(line, startChar, length, tokenTypes.indexOf(tokenType), 0);
+	});
 
     const result = builder.build();
     console.log("[Server] Sending tokens:", result);

@@ -14,7 +14,7 @@ Trace '$(vG.CH_GeneralLoadPath)';
 Trace '$(vG.GeneralLoadPath)';
 
 // comment
-/* INCLUDE ALL FIELS */
+/* INCLUDE ALL FILES */
 $(Must_Include=[$(vAppScriptPath)/$(vCountry)/$(vApplicationId)/customer.qvs]);
 $(Must_Include=[$(vAppScriptPath)/$(vCountry)/$(vApplicationId)/product_priority_pivot.qvs]);
 $(Must_Include=[$(vAppScriptPath)/$(vCountry)/$(vApplicationId)/segmentation_calc.qvs]);
