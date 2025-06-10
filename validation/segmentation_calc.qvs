@@ -4,6 +4,7 @@ SET vL.scriptFullNameStart='\\AWWEUQLKPRPS41\d\Projects\GHH_EUCIMBI\3.Include\6.
 
 SUB LOAD_CH_SALES
     
+   
     set vEulerSalesFile = 'F_SALES_EULER_3L';
     SALES_TEMP:
         NoConcatenate
@@ -34,7 +35,7 @@ SUB LOAD_CH_SALES
             LOAD Distinct
                 extid as GLN,
                 "%MDM Key",
-                "%MDM Key"          as customer_check,
+                "%MDM Key"          as customer_check, 
                 "Customer Type"
             Resident D_CUSTOMER;
         drop field GLN from SALES_TEMP; // remove duplicate customers due to GLN field << extid
@@ -185,7 +186,6 @@ SUB VACCINES_SEGMENTATION_CALC
     set vSPLowmin=1;
     set vSPLowmax=40;
 
-
     IQVIA_DATA_temp:
        LOAD
             @2                               as parent_gln,    // GLN Praxis
@@ -217,7 +217,7 @@ SUB VACCINES_SEGMENTATION_CALC
             *
             ,Floor((min_p_value+max_p_value)/2)                  as average
             ,Floor(Floor((min_p_value+max_p_value)/2)/total_hcp) as p_per_hcp
-        resident IQVIA_DATA_temp;           
+        resident IQVIA_DATA_temp;       
 
 
     TMP_GARDASIL_SALES:
