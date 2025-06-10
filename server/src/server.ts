@@ -280,24 +280,36 @@ connection.onRequest("textDocument/semanticTokens/full", async (params) => {
         };
 
         // Collect matches for all token types
-        collectMatches(/\b(LOAD|SELECT|FROM|WHERE|JOIN|DROP|NOT|GROUP|BY|SUB|END|LEFT|INLINE|FIELD|TABLE|AS|INNER|OUTER|IF|ELSE|LET|SET|AND|OR|NoConcatenate|RESIDENT)\b/gi, "keyword");
-        collectMatches(/\b(?!IF|JOIN\b)([A-Z_#]+)\s*\(/gi, "function");
+		
+		collectMatches(/\b(LOAD|SELECT|TRACE|DISTINCT|FROM|WHERE|JOIN|DROP|NOT|SUB|END|GROUP|BY|LEFT|INLINE|FIELD|TABLE|AS|INNER|OUTER|IF|ELSE|LET|SET|AND|OR|NoConcatenate|RESIDENT)\b/gi, "keyword");
+		collectMatches(/\b(?!IF|JOIN\b)([A-Z_#]+)\s*\(/gi, "function");
 		collectMatches(/\b(?<=\b(?:SUB)\s)([A-Z_#]+)\s*[\(]?/gi, "function");
-        collectMatches(/\b(LOAD|SELECT|TRACE|DISTINCT|FROM|WHERE|JOIN|DROP|NOT|SUB|END|GROUP|BY|LEFT|INLINE|FIELD|TABLE|AS|INNER|OUTER|IF|ELSE|LET|SET|AND|OR|NoConcatenate|RESIDENT)\b/gi, "keyword");
 		collectMatches(/\@([0-9]*)/g, "property");
-        // collectMatches(/\b(?:SET|LET)\s+([a-zA-Z_]*.[a-zA-Z0-9_]*)\b/gi, "variable");
-        collectMatches(/\b(?<=\b(?:SET|LET)\s)[a-zA-Z_]*\.?([a-zA-Z0-9_]*)\b/gi, "variable");
-        collectMatches(/(\$\([a-zA-Z0-9_.]*)\)/g, "variable"); // variables with $(variable)
-        collectMatches(/(["'])(?:(?=(\\?))\2.)*?\1/g, "string");
-		collectMatches(/(?<=(?:AS)\s)[\["]?[a-zA-Z0-9_ ]*[\]"]?/gi, "string");
-		collectMatches(/\[lib:\/\/[^\]]*]/gi, "string");
-        collectMatches(/\/\/.*/g, "comment"); // single line
-        collectMatches(/\/\*[\s\S]*?\*\//g, "comment"); // multiline
-        collectMatches(/^\s*(?!lib$)([a-zA-Z0-9_]+:)/g, "class");
-        collectMatches(/(?<=(?:FROM)\s)[\w]+/g, "class");
-        collectMatches(/(?<=(?:RESIDENT)\s)[\w]+/gi, "class");
-        collectMatches(/(?<=\(|,)\s*[^(),]+?\s*(?=,|\))/g, "parameter");
-        collectMatches(/(?<=(?:trace)\s)[a-z0-9 >:$(_)]*/gi, "decorator");
+		collectMatches(/\b(?<=\b(?:SET|LET)\s)[a-zA-Z_]*\.?([a-zA-Z0-9_]*)\b/gi, "variable");
+		collectMatches(/(\$\([a-zA-Z0-9_.]*)\)/g, "variable"); // variables with $(variable)
+		
+		// Match strings enclosed in single or double quotes
+		collectMatches(/(["'])(?:(?=(\\?))\2.)*?\1/g, "string");
+		
+		// Match strings that start with AS and end with ], allowing for any content in between
+		collectMatches(/(?<=(?:AS)\s)[\["]{1}[a-zA-Z0-9_ ]*[\]"]{1}/gi, "string");
+		
+		// Match lib: URLs
+		// Match strings that start with lib: and end with ], allowing for any content in between
+		collectMatches(/\[lib:\/\/[^\]].*]/gi, "string");
+		
+		// Single-line comments
+		// Match comments that start with //, but not those that start with lib:
+		collectMatches(/(?<!lib:)\/\/.*/g, "comment");
+
+		// Multi-line comments
+		// Match comments that start with /* and end with */, allowing for any content in between
+		collectMatches(/\/\*[\s\S]*?\*\//g, "comment");
+		collectMatches(/^\s*(?!lib$)([a-zA-Z0-9_]+:)/g, "class");
+		collectMatches(/(?<=(?:FROM)\s)[\w]+/g, "class");
+		collectMatches(/(?<=(?:RESIDENT)\s)[\w]+/gi, "class");
+		collectMatches(/(?<=\(|,)\s*[^(),]+?\s*(?=,|\))/g, "parameter");
+		collectMatches(/(?<=(?:trace)\s)[a-z0-9 >:$(_)]*/gi, "decorator");
 
         // Sort matches by index to ensure correct ordering
         matches.sort((a, b) => a.index - b.index);
