@@ -320,12 +320,23 @@ connection.onRequest("textDocument/semanticTokens/full", async (params) => {
 
         // Collect matches for all token types
 		
-		collectMatches(/\b(LOAD|SELECT|TRACE|DISTINCT|FROM|WHERE|JOIN|DROP|NOT|SUB|END|GROUP|BY|LEFT|INLINE|FIELD|TABLE|AS|INNER|OUTER|IF|ELSE|LET|SET|AND|OR|NoConcatenate|RESIDENT)\b/gi, "keyword");
+		// Match keywords
+		collectMatches(/\b(LOAD|SELECT|TRACE|DISTINCT|FROM|WHERE|JOIN|DROP|NOT|SUB|END|GROUP|BY|LEFT|INLINE|FIELD|TABLE|AS|INNER|OUTER|IF|ELSE|LET|SET|AND|OR|NoConcatenate|RESIDENT|STORE|INTO)\b/gi, "keyword");
+		
+		// Match functions
 		collectMatches(/\b(?!IF|JOIN\b)([A-Z_#]+)\s*\(/gi, "function");
+		
+		// Match functions that start with SUB
 		collectMatches(/\b(?<=\b(?:SUB)\s)([A-Z_#]+)\s*[\(]?/gi, "function");
+		
+		// Match properties that start with @
 		collectMatches(/\@([0-9]*)/g, "property");
+		
+		// Match variables that start with SET or LET
 		collectMatches(/\b(?<=\b(?:SET|LET)\s)[a-zA-Z_]*\.?([a-zA-Z0-9_]*)\b/gi, "variable");
-		collectMatches(/(\$\([a-zA-Z0-9_.]*)\)/g, "variable"); // variables with $(variable)
+
+	    // Match variables that start with $()
+		collectMatches(/(\$\([a-zA-Z0-9_.]*)\)/g, "variable");
 		
 		// Match strings enclosed in single or double quotes
 		collectMatches(/(["'])(?:(?=(\\?))\2.)*?\1/g, "string");
@@ -344,10 +355,20 @@ connection.onRequest("textDocument/semanticTokens/full", async (params) => {
 		// Multi-line comments
 		// Match comments that start with /* and end with */, allowing for any content in between
 		collectMatches(/\/\*[\s\S]*?\*\//g, "comment");
+
+		// Match class names that start with lib: but not the keyword lib
 		collectMatches(/^\s*(?!lib$)([a-zA-Z0-9_]+:)/g, "class");
+		
+		// Match class names after FROM, RESIDENT, and TABLE keywords, TABLE can have multiple classes separated by commas
 		collectMatches(/(?<=(?:FROM)\s)[\w]+/g, "class");
 		collectMatches(/(?<=(?:RESIDENT)\s)[\w]+/gi, "class");
+		collectMatches(/(?<=(?:STORE)\s)[\w]+/gi, "class");
+		collectMatches(/(?<=(?:TABLE)\s)[\w,]+/gi, "class");
+
+		// Match parameters in function calls
 		collectMatches(/(?<=\(|,)\s*[^(),]+?\s*(?=,|\))/g, "parameter");
+
+		// Match decorators that start with trace
 		collectMatches(/(?<=(?:trace)\s)[a-z0-9 >:$(_)]*/gi, "decorator");
 
 			// Sort matches by index to ensure correct ordering
