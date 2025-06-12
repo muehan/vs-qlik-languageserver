@@ -321,7 +321,7 @@ connection.onRequest("textDocument/semanticTokens/full", async (params) => {
         // Collect matches for all token types
 		
 		// Match keywords
-		collectMatches(/\b(LOAD|SELECT|TRACE|DISTINCT|FROM|WHERE|JOIN|DROP|NOT|SUB|END|GROUP|BY|LEFT|INLINE|FIELD|TABLE|AS|INNER|OUTER|IF|ELSE|LET|SET|AND|OR|NoConcatenate|RESIDENT|STORE|INTO)\b/gi, "keyword");
+		collectMatches(/\b(LOAD|SELECT|TRACE|DISTINCT|FROM|WHERE|JOIN|DROP|NOT|SUB|END|GROUP|BY|LEFT|INLINE|FIELD|TABLE|AS|INNER|OUTER|IF|ELSE|LET|SET|AND|OR|NoConcatenate|RESIDENT|STORE|INTO|EXIT|SCRIPT|RENAME|TO)\b/gi, "keyword");
 		
 		// Match functions
 		collectMatches(/\b(?!IF|JOIN\b)([A-Z_#]+)\s*\(/gi, "function");
@@ -364,6 +364,7 @@ connection.onRequest("textDocument/semanticTokens/full", async (params) => {
 		collectMatches(/(?<=(?:RESIDENT)\s)[\w]+/gi, "class");
 		collectMatches(/(?<=(?:STORE)\s)[\w]+/gi, "class");
 		collectMatches(/(?<=(?:TABLE)\s)[\w,]+/gi, "class");
+		collectMatches(/(?<=(?:TO)\s)[\w,]+/gi, "class");
 
 		// Match parameters in function calls
 		collectMatches(/(?<=\(|,)\s*[^(),]+?\s*(?=,|\))/g, "parameter");
