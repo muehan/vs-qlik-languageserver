@@ -32,6 +32,7 @@ import {
 import * as fs from 'fs';
 import * as path from 'path';
 import { getUppercaseQuickfix } from './quickFix/keywordToUppercase';
+import { QlikLanguageServerSettings } from './configuration/QlikLanguageServerSettings';
 
 let qlikKeywords: string[] = [];
 
@@ -119,15 +120,16 @@ connection.onInitialized(() => {
 	}
 });
 
-// The example settings
-interface QlikLanguageServerSettings {
-	maxNumberOfProblems: number;
-}
-
 // The global settings, used when the `workspace/configuration` request is not supported by the client.
 // Please note that this is not the case when using this server with the client provided in this example
 // but could happen with other clients.
-const defaultSettings: QlikLanguageServerSettings = { maxNumberOfProblems: 1000 };
+const defaultSettings: QlikLanguageServerSettings = {
+	maxNumberOfProblems: 1000,
+	linter: {
+		active: true,
+		keywordsUppercase: true
+	}
+};
 let globalSettings: QlikLanguageServerSettings = defaultSettings;
 
 // Cache the settings of all open documents
@@ -195,12 +197,18 @@ async function validateTextDocument(textDocument: TextDocument): Promise<Diagnos
 	const settings = await getDocumentSettings(textDocument.uri);
 	const text = textDocument.getText();
 
+	if(settings.linter.active === false) {
+		// linter is disabled
+		return [];
+	}
+
 	// Collect diagnostics from all checkers
 	const diagnostics: Diagnostic[] = [];
 
 	// Check for lowercase keywords
-	diagnostics.push(...getKeywordUppercaseDiagnostics(text, textDocument, settings.maxNumberOfProblems, qlikKeywords));
-
+	if (settings.linter.keywordsUppercase) {
+		diagnostics.push(...getKeywordUppercaseDiagnostics(text, textDocument, settings.maxNumberOfProblems, qlikKeywords));
+	}
 	// Add other diagnostic checks here in future, if needed
 
 	return diagnostics;
@@ -360,7 +368,7 @@ connection.onRequest("textDocument/semanticTokens/full", async (params) => {
 
 		// Match strings enclosed in single or double quotes
 		collectMatches(/(["'])(?:(?=(\\?))\2.)*?\1/g, "string");
-		
+
 		// Match strings that start with AS and end with ], allowing for any content in between
 		collectMatches(/(?<=(?:AS)\s)[\["]{1}[a-zA-Z0-9_\- ]*[\]"]{1}/gi, "string");
 

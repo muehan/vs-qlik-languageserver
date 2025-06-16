@@ -12,7 +12,12 @@
 	"publisher": "andremuehle",
 	"categories": [],
 	"keywords": [
-		"qlik", "qvs", "qliksense", "qlik sense", "qliksense script", "qlik sense script"
+		"qlik",
+		"qvs",
+		"qliksense",
+		"qlik sense",
+		"qliksense script",
+		"qlik sense script"
 	],
 	"engines": {
 		"vscode": "^1.75.0"
@@ -55,6 +60,16 @@
 					],
 					"default": "off",
 					"description": "Traces the communication between VS Code and the language server."
+				},
+				"qliklanguageServer.linter.active": {
+					"type": "boolean",
+					"default": true,
+					"description": "Use Linter gobal flag to enable or disable the linter."
+				},
+				"qliklanguageServer.linter.keywordsUppercase": {
+					"type": "boolean",
+					"default": true,
+					"description": "Use Linter to check if keywords are uppercase."
 				}
 			}
 		}
