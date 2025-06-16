@@ -32,4 +32,5 @@
 
 # Version 1.0.8
 - Feature add operator token
-- Add configuration setting
+- Feature add configuration setting
+- Bugfix change AS-String regex
