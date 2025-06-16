@@ -15,6 +15,7 @@ LOAD
     ,Floor(1,2,3,4)
     ,Floor(IF(1=2,1,2)) as Floor_test
     ,[column1]          as [column1]
+    ,[column2]          as [column1-_test]
 FROM [lib://some/path/o/file.qvd](qvd);    
 
 Test:

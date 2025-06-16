@@ -32,3 +32,5 @@
 
 # Version 1.0.8
 - Feature add operator token
+- Feature add configuration setting
+- Bugfix change AS-String regex
