@@ -16,3 +16,8 @@ This Language Server works for QVS files. It has the following language features
 ## Versioning
 
 - tag versions
+- tag with X.X.X match does trigger github action for a new release
+
+
+## Changelog
+Check changelog.md

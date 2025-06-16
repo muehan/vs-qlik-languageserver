@@ -6,7 +6,6 @@ import {
 	createConnection,
 	TextDocuments,
 	Diagnostic,
-	DiagnosticSeverity,
 	ProposedFeatures,
 	InitializeParams,
 	DidChangeConfigurationNotification,
@@ -18,12 +17,31 @@ import {
 	DocumentDiagnosticReportKind,
 	SemanticTokensBuilder,
 	SemanticTokensLegend,
-	type DocumentDiagnosticReport
+	type DocumentDiagnosticReport,
+	CodeAction
 } from 'vscode-languageserver/node';
 
 import {
 	TextDocument
 } from 'vscode-languageserver-textdocument';
+
+import {
+	getKeywordUppercaseDiagnostics
+} from './linter/keywordsUppercase';
+
+import * as fs from 'fs';
+import * as path from 'path';
+import { getUppercaseQuickfix } from './quickFix/keywordToUppercase';
+
+let qlikKeywords: string[] = [];
+
+try {
+	const csvPath = path.resolve(__dirname, 'qlik_keywords.csv');
+	const csvData = fs.readFileSync(csvPath, 'utf8');
+	qlikKeywords = csvData.split(/\r?\n/).filter(Boolean);
+} catch (error) {
+	console.error("Failed to load Qlik keywords CSV:", error);
+}
 
 // Create a connection for the server, using Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
@@ -36,7 +54,7 @@ let hasConfigurationCapability = false;
 let hasWorkspaceFolderCapability = false;
 let hasDiagnosticRelatedInformationCapability = false;
 
-const tokenTypes = ["keyword", "variable", "function", "string", "comment", "class", "parameter", "property", "decorator"];
+const tokenTypes = ["keyword", "variable", "function", "string", "comment", "class", "parameter", "property", "decorator", "operator"];
 const tokenModifiers: string[] = [];
 
 const legend: SemanticTokensLegend = { tokenTypes, tokenModifiers };
@@ -72,10 +90,11 @@ connection.onInitialize((params: InitializeParams) => {
 				workspaceDiagnostics: false
 			},
 			semanticTokensProvider: {
-                legend,
-                range: false, // Change to true if you want partial updates
-                full: true
-            }
+				legend,
+				range: false, // Change to true if you want partial updates
+				full: true
+			},
+			codeActionProvider: true
 		}
 	};
 	if (hasWorkspaceFolderCapability) {
@@ -149,7 +168,6 @@ documents.onDidClose(e => {
 	documentSettings.delete(e.document.uri);
 });
 
-
 connection.languages.diagnostics.on(async (params) => {
 	const document = documents.get(params.textDocument.uri);
 	if (document !== undefined) {
@@ -174,49 +192,42 @@ documents.onDidChangeContent(change => {
 });
 
 async function validateTextDocument(textDocument: TextDocument): Promise<Diagnostic[]> {
-	// In this simple example we get the settings for every validate run.
 	const settings = await getDocumentSettings(textDocument.uri);
-
-	// The validator creates diagnostics for all uppercase words length 2 and more
 	const text = textDocument.getText();
-	const pattern = /\b[A-Z]{200,}\b/g;
-	let m: RegExpExecArray | null;
 
-	let problems = 0;
+	// Collect diagnostics from all checkers
 	const diagnostics: Diagnostic[] = [];
-	while ((m = pattern.exec(text)) && problems < settings.maxNumberOfProblems) {
-		problems++;
-		const diagnostic: Diagnostic = {
-			severity: DiagnosticSeverity.Warning,
-			range: {
-				start: textDocument.positionAt(m.index),
-				end: textDocument.positionAt(m.index + m[0].length)
-			},
-			message: `${m[0]} is all uppercase.`,
-			source: 'ex'
-		};
-		if (hasDiagnosticRelatedInformationCapability) {
-			diagnostic.relatedInformation = [
-				{
-					location: {
-						uri: textDocument.uri,
-						range: Object.assign({}, diagnostic.range)
-					},
-					message: 'Spelling matters'
-				},
-				{
-					location: {
-						uri: textDocument.uri,
-						range: Object.assign({}, diagnostic.range)
-					},
-					message: 'Particularly for names'
-				}
-			];
-		}
-		diagnostics.push(diagnostic);
-	}
+
+	// Check for lowercase keywords
+	diagnostics.push(...getKeywordUppercaseDiagnostics(text, textDocument, settings.maxNumberOfProblems, qlikKeywords));
+
+	// Add other diagnostic checks here in future, if needed
+
 	return diagnostics;
 }
+
+
+// Add this handler after your other connection handlers
+connection.onCodeAction(async (params) => {
+
+	const document = documents.get(params.textDocument.uri);
+	if (!document) {
+		return [];
+	}
+
+	const diagnostics = params.context.diagnostics;
+	const text = document.getText();
+	const codeActions: CodeAction[] = [];
+
+	getUppercaseQuickfix(
+		diagnostics,
+		text,
+		params,
+		codeActions
+	);
+
+	return codeActions;
+});
 
 connection.onDidChangeWatchedFiles(_change => {
 	// Monitored files have change in VSCode
@@ -254,100 +265,109 @@ connection.onCompletionResolve(
 
 // Function to compute semantic tokens
 connection.onRequest("textDocument/semanticTokens/full", async (params) => {
-    console.log("[Server] onRequest textDocument/semanticTokens/full");
-    const document = documents.get(params.textDocument.uri);
-    if (!document) { return null; }
+	const document = documents.get(params.textDocument.uri);
+	if (!document) { return null; }
 
-    const builder = new SemanticTokensBuilder();
-    const text = document.getText();
-    const lines = text.split("\n");
+	const builder = new SemanticTokensBuilder();
+	const text = document.getText();
+	const lines = text.split("\n");
 
 	const tokenData: {
-        line: number;
-        startChar: number;
-        length: number;
-        tokenType: string;
-    }[] = [];
+		line: number;
+		startChar: number;
+		length: number;
+		tokenType: string;
+	}[] = [];
 
 	// === 1. Handle multi-line comments ===
-    const multiLineCommentRegex = /\/\*[\s\S]*?\*\//g;
-    let match;
-    while ((match = multiLineCommentRegex.exec(text)) !== null) {
-        const startOffset = match.index;
-        const endOffset = match.index + match[0].length;
+	const multiLineCommentRegex = /\/\*[\s\S]*?\*\//g;
+	let match;
+	while ((match = multiLineCommentRegex.exec(text)) !== null) {
+		const startOffset = match.index;
+		const endOffset = match.index + match[0].length;
 
-        const startPosition = document.positionAt(startOffset);
-        const endPosition = document.positionAt(endOffset);
+		const startPosition = document.positionAt(startOffset);
+		const endPosition = document.positionAt(endOffset);
 
-        if (startPosition.line !== endPosition.line) {
-            for (let line = startPosition.line; line <= endPosition.line; line++) {
-				console.log("[Server] Processing multi-line comment line:", line);
-                const lineStart = (line === startPosition.line) ? startPosition.character : 0;
-                const lineEnd = (line === endPosition.line)
-                    ? endPosition.character
-                    : lines[line].length;
-                tokenData.push({
-                    line,
-                    startChar: lineStart,
-                    length: lineEnd - lineStart,
-                    tokenType: "comment",
-                });
-            }
-        }
-    }
+		if (startPosition.line !== endPosition.line) {
+			for (let line = startPosition.line; line <= endPosition.line; line++) {
+				const lineStart = (line === startPosition.line) ? startPosition.character : 0;
+				const lineEnd = (line === endPosition.line)
+					? endPosition.character
+					: lines[line].length;
+				tokenData.push({
+					line,
+					startChar: lineStart,
+					length: lineEnd - lineStart,
+					tokenType: "comment",
+				});
+			}
+		}
+	}
 
 	//  tokenData.forEach(({ line, startChar, length, tokenType }) => {
 	// 	builder.push(line, startChar, length, tokenTypes.indexOf(tokenType), 0);
 	// });
 
 
-    for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
-        const line = lines[lineIndex];
-		const matches:any[] = [];
+	for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
+		const line = lines[lineIndex];
+		const matches: { index: number, length: number, tokenType: string }[] = [];
 
-        // Helper function to collect matches
-        const collectMatches = (regex:any, tokenType:any) => {
-            let match;
-            while ((match = regex.exec(line)) !== null) {
-                if (match.index >= 0) {
-                    matches.push({ 
-						index: match.index, 
-						length: tokenType == "function" ? match[0].length -1 : match[0].length, 
-						tokenType });
-                }
-            }
-        };
+		// Helper function to collect matches
+		const collectMatches = (regex: RegExp, tokenType: string) => {
+			let match;
+			while ((match = regex.exec(line)) !== null) {
 
-        // Collect matches for all token types
-		
+				try {
+					if (match.index >= 0) {
+						matches.push({
+							index: match.index,
+							length: tokenType == "function" ? match[0].length - 1 : match[0].length,
+							tokenType
+						});
+					}
+				} catch (ex) {
+					console.log('error in line: ' + line);
+					throw ex;
+				}
+			}
+		};
+
+		// Collect matches for all token types
+
 		// Match keywords
-		collectMatches(/\b(LOAD|SELECT|TRACE|DISTINCT|FROM|WHERE|JOIN|DROP|NOT|SUB|END|GROUP|BY|LEFT|INLINE|FIELD|TABLE|AS|INNER|OUTER|IF|ELSE|LET|SET|AND|OR|NoConcatenate|RESIDENT|STORE|INTO|EXIT|SCRIPT|RENAME|TO)\b/gi, "keyword");
-		
-		// Match functions
+		//const keywordPattern = new RegExp(`\\b(${qlikKeywords.join('|')})\\b`, 'gi');
+		//collectMatches(keywordPattern, "keyword");
+		const keywordPattern = new RegExp(`\\b(${qlikKeywords.join('|')})\\b`, 'gi');
+		collectMatches(keywordPattern, "keyword");
+
+		// detect function, ignore IF and JOIN
 		collectMatches(/\b(?!IF|JOIN\b)([A-Z_#]+)\s*\(/gi, "function");
-		
+
 		// Match functions that start with SUB
-		collectMatches(/\b(?<=\b(?:SUB)\s)([A-Z_#]+)\s*[\(]?/gi, "function");
-		
+		collectMatches(/\b(?<=\b(?:SUB)\s)([A-Z0-9_#]+)(\(|\r\n|\r|\n)/gi, "function");
+		collectMatches(/\b(?<=\b(?:CALL)\s)([A-Z0-9_#]+)\s*[\(|;]?/gi, "function");
+
 		// Match properties that start with @
 		collectMatches(/\@([0-9]*)/g, "property");
-		
+
 		// Match variables that start with SET or LET
 		collectMatches(/\b(?<=\b(?:SET|LET)\s)[a-zA-Z_]*\.?([a-zA-Z0-9_]*)\b/gi, "variable");
 
-	    // Match variables that start with $()
+		// Match variables that start with $()
 		collectMatches(/(\$\([a-zA-Z0-9_.]*)\)/g, "variable");
-		
+
 		// Match strings enclosed in single or double quotes
 		collectMatches(/(["'])(?:(?=(\\?))\2.)*?\1/g, "string");
 		
 		// Match strings that start with AS and end with ], allowing for any content in between
-		collectMatches(/(?<=(?:AS)\s)[\["]{1}[a-zA-Z0-9_ ]*[\]"]{1}/gi, "string");
-		
+		collectMatches(/(?<=(?:AS)\s)[\["]{1}[a-zA-Z0-9_\- ]*[\]"]{1}/gi, "string");
+
 		// Match lib: URLs
 		// Match strings that start with lib: and end with ], allowing for any content in between
 		collectMatches(/\[lib:\/\/[^\]].*]/gi, "string");
-		
+
 		// Single-line comments
 		// Match comments that start with //, but not those that start with lib:
 		collectMatches(/(?<!lib:)\/\/.*/g, "comment");
@@ -358,33 +378,36 @@ connection.onRequest("textDocument/semanticTokens/full", async (params) => {
 
 		// Match class names that start with lib: but not the keyword lib
 		collectMatches(/^\s*(?!lib$)([a-zA-Z0-9_]+:)/g, "class");
-		
 		// Match class names after FROM, RESIDENT, and TABLE keywords, TABLE can have multiple classes separated by commas
 		collectMatches(/(?<=(?:FROM)\s)[\w]+/g, "class");
 		collectMatches(/(?<=(?:RESIDENT)\s)[\w]+/gi, "class");
 		collectMatches(/(?<=(?:STORE)\s)[\w]+/gi, "class");
-		collectMatches(/(?<=(?:TABLE)\s)[\w,]+/gi, "class");
+		collectMatches(/(?<=(?:TABLE)\s)[\w, ]+/gi, "class");
 		collectMatches(/(?<=(?:TO)\s)[\w,]+/gi, "class");
 
 		// Match parameters in function calls
-		collectMatches(/(?<=\(|,)\s*[^(),]+?\s*(?=,|\))/g, "parameter");
+		collectMatches(/(?<=\(|,)\s*[^(),'"]+?\s*(?=,|\))/g, "parameter");
 
 		// Match decorators that start with trace
-		collectMatches(/(?<=(?:trace)\s)[a-z0-9 >:$(_)]*/gi, "decorator");
+		collectMatches(/(?<=(?:trace)\s)[a-z0-9 >:$(_)'.]*/gi, "decorator");
 
-			// Sort matches by index to ensure correct ordering
+		// Match operators
+		collectMatches(/<>|<=|>=|==|=|<|>|\+|-|\*|\/|%|&|\||!|~|<<|>>/g, "operator");
+
+		// Sort matches by index to ensure correct ordering
 		matches.sort((a, b) => a.index - b.index);
 
 		// Push tokens to builder
 		matches.forEach(({ index, length, tokenType }) => {
 			tokenData.push(
 				{
-					line: lineIndex, 
-					startChar: index, 
+					line: lineIndex,
+					startChar: index,
 					length: length,
-					tokenType: tokenType});
+					tokenType: tokenType
+				});
 		});
-    }
+	}
 
 	tokenData.sort((a, b) => a.line - b.line);
 
@@ -392,9 +415,9 @@ connection.onRequest("textDocument/semanticTokens/full", async (params) => {
 		builder.push(line, startChar, length, tokenTypes.indexOf(tokenType), 0);
 	});
 
-    const result = builder.build();
-    console.log("[Server] Sending tokens:", result);
-    return result;
+	const result = builder.build();
+	//console.log("[Server] Sending tokens:", result);
+	return result;
 });
 
 // Make the text document manager listen on the connection

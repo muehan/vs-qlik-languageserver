@@ -3,4 +3,7 @@ node_modules
 client/server
 .vscode-test
 .DS_Store
-.vsix
+*.vsix
+validation/test.qvs
+validation/fullfile.qvs
+*.tsbuildinfo

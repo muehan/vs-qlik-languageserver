@@ -3,12 +3,13 @@
 	"description": "A Qlik language server",
 	"author": "Mühle André",
 	"license": "GPL-3.0",
-	"version": "1.0.1",
+	"version": "1.0.3",
+	"type": "commonjs",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/muehan/vs-qlik-languageserver"
 	},
-	"publisher": "Mühle André",
+	"publisher": "andremuehle",
 	"categories": [],
 	"keywords": [
 		"qlik", "qvs", "qliksense", "qlik sense", "qliksense script", "qlik sense script"
@@ -60,7 +61,7 @@
 	},
 	"scripts": {
 		"vscode:prepublish": "npm run compile",
-		"compile": "tsc -b",
+		"compile": "tsc -b && node ./server/copy-assets.js",
 		"watch": "tsc -b -w",
 		"lint": "eslint",
 		"postinstall": "cd client && npm install && cd ../server && npm install && cd ..",

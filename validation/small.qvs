@@ -1,0 +1,57 @@
+// asdf
+TEST:
+load
+    CustomerName
+from [lib://somepath/customer.qvs](qvs)
+;
+
+// asdf
+TEST:
+load
+    CustomerName
+from [lib://somepath/customer.qvs](qvs)
+;
+
+
+SET vText = 'asdfasdf to lore ipsum blabla from do not mark me as select';
+
+sub LOAD_ALL_CUSTOMERS
+
+    
+END SUB;
+
+SUB SET_TOOLSTIPS
+
+    /* asdf */
+    TEST:
+    LOAD
+        CustomerName
+    FROM [lib://somepath/customer.qvs](qvs)
+    WHERE CustomerName = 'asdf'
+    AND Date#(param1, "YYYY-MM-DD") > Date#(param2, 'YYYY-MM-DD');
+    AND Match("CustomerName", "asdf", 'lorem ipsum', 'dolor sit amet') > 0;
+    
+    LOAD
+        '$(vText)' as [Tool-Tip2]
+    INLINE [
+        ToolTip2
+        '$(vText)'
+    ];
+    
+    LOAD
+        '$(vText)' as "ToolTip3"
+    INLINE [
+        ToolTip3
+        '$(vText)'
+    ];
+
+    LOAD
+        '$(vText)' as ToolTip4
+    INLINE [
+        ToolTip3
+        '$(vText)'
+    ];
+    
+END SUB;
+
+DROP TABLE TABLE1, TABLE2, TABLE3;
