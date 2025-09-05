@@ -1,3 +1,7 @@
+# Version 1.0.17
+- enhance trace to allow comments at the end
+- don't check for keywords in trace
+
 # Version 1.0.16
 - fix trace pattern
 
