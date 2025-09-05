@@ -100,7 +100,9 @@ export function semanticTokenFinder(
 		collectMatches(/(?<!JOIN\s\()(?<=\(|,)\s*[^(),'"]+?\s*(?=,|\))/gi, "parameter");
 
 		// Match decorators that start with trace
-		collectMatches(/(?<=(?:trace)\s)[a-z0-9 >:$(_)'.]*/gi, "decorator");
+		//collectMatches(/(?<=(?:trace)\s)[a-z0-9 >:$(_)'.=!?~;:]*/gi, "decorator");
+		//collectMatches(/(?<=(?:trace)\s)[\p{L}\p{N}\p{S}\p{P}\p{M}\p{C}\p{Z}]*/gu, "decorator");
+		collectMatches(/(?<=\btrace\s).*/gi, "decorator");
 
 		// Match operators
 		// find a solution for / not to be seen in paths and comments

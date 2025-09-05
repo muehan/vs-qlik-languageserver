@@ -1,0 +1,17 @@
+Trace '$(vG.GeneralLoadPath)';
+
+TRACE =========== HELLO WORLD ==========;
+
+TRACE =========== HELLO! WORLD ==========;
+TRACE =========== HELLO? WORLD ==========;
+TRACE =========== HELLO; WORLD ==========;
+TRACE =========== HELLO~ WORLD ==========;
+TRACE var: $(variable);
+
+TRACE =========== こんにちは世界 ==========;   (Japanese)
+TRACE =========== مرحبا بالعالم ==========;   (Arabic)
+TRACE =========== שלום עולם ==========;       (Hebrew)
+TRACE =========== κόσμε γειά ==========;      (Greek)
+TRACE =========== 세계 안녕 ==========;        (Korean)
+TRACE =========== ДАННЫЕ ==========;
+trace =========== тест? пример ==========;    (Russian)
