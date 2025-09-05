@@ -48,9 +48,22 @@ export function semanticTokenFinder(
 		// Match keywords
 		//const keywordPattern = new RegExp(`\\b(${qlikKeywords.join('|')})\\b`, 'gi');
 		//collectMatches(keywordPattern, "keyword");
-		const keywordPattern = new RegExp(`\\b(${qlikKeywords.join('|')})\\b`, 'gi');
-		collectMatches(keywordPattern, "keyword");
+		// const keywordPattern = new RegExp(`\\b(${qlikKeywords.join('|')})\\b`, 'gi');
+		// collectMatches(keywordPattern, "keyword");
 
+		if (/^\s*trace\s+/i.test(line)) { 
+			// Match decorators that start with trace 
+			// //collectMatches(/(?<=(?:trace)\s)[a-z0-9 >:$(_)'.=!?~;:]*/gi, "decorator"); 
+			// //collectMatches(/(?<=(?:trace)\s)[\p{L}\p{N}\p{S}\p{P}\p{M}\p{C}\p{Z}]*/gu, "decorator"); 
+			//collectMatches(/(?<=\btrace\s).*/gi, "decorator");
+			collectMatches(/(?<=\btrace\s)(.*?)(?=(\/\/|\/\*|$))/gi, "decorator");
+			const keywordPattern = new RegExp(`\\btrace\\b`, 'gi');
+			collectMatches(keywordPattern, "keyword");
+		} else { 
+			const keywordPattern = new RegExp(`\\b(${qlikKeywords.join('|')})\\b`, 'gi');
+			collectMatches(keywordPattern, "keyword");
+		}
+		
 		// detect function, ignore IF and JOIN
 		collectMatches(/\b(?!IF|JOIN\b)([A-Z_#]+)\s*\(/gi, "function");
 

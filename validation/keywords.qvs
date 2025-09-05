@@ -1,0 +1,18 @@
+TRACE FOR this THEN hello AND item CALL SUB; // Accepted
+TRACE for this then hello and item call sub; // Flagged as error
+TRACE for this then hello and item call sub; /* Accepted */
+
+
+
+/*
+  for this then hello and item call sub;
+*/
+
+MyExcelData:
+LOAD
+    Column1,
+    Column2,
+    Column3;
+LOAD *
+FROM [C:\Data\MyExcelFile.xlsx]
+(ooxml, embedded labels, table is Sheet1);

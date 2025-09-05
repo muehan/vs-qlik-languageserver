@@ -4,7 +4,7 @@ TRACE =========== HELLO WORLD ==========;
 
 TRACE =========== HELLO! WORLD ==========;
 TRACE =========== HELLO? WORLD ==========;
-TRACE =========== HELLO; WORLD ==========;
+TRACE =========== HELLO; WORLD ==========; //ASDFASDFASDF
 TRACE =========== HELLO~ WORLD ==========;
 TRACE var: $(variable);
 
@@ -15,3 +15,6 @@ TRACE =========== κόσμε γειά ==========;      (Greek)
 TRACE =========== 세계 안녕 ==========;        (Korean)
 TRACE =========== ДАННЫЕ ==========;
 trace =========== тест? пример ==========;    (Russian)
+
+TRACE FOR this THEN hello AND item CALL SUB; // Accepted
+TRACE for this then hello and item call sub; // Flagged as error

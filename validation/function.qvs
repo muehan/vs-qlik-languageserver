@@ -1,1 +1,2 @@
 Floor(if(hco_MAT_sales>10000,$(HighAbs),if(hco_MAT_sales>5000 and hco_MAT_sales<=10000,$(MediumAbs),if(hco_MAT_sales<5000 and hco_MAT_sales > 1000,$(LowAbs),$(ZeroAbs)))) * 0.5 + Coalesce("Prescribing behaviour Gardasil9",0) * 0.5) as prescribing_behaviour
+

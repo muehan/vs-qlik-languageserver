@@ -72,6 +72,27 @@ function isInString(index: number, text: string): boolean {
 	return false;
 }
 
+function isInTrace(index: number, text: string): boolean {
+	let currentPos = 0; // track position in text
+
+    // Split text by lines
+    const lines = text.split(/\r?\n/);
+
+    for (const line of lines) {
+        const lineLength = line.length + 1; // +1 for newline character
+
+        if (index < currentPos + lineLength) {
+            // The index is inside this line
+            return /^\s*trace\s+/i.test(line);
+        }
+
+        currentPos += lineLength;
+    }
+
+    // index beyond text
+    return false;
+}
+
 export function getKeywordUppercaseDiagnostics(
 	text: string,
 	textDocument: TextDocument,
@@ -90,6 +111,10 @@ export function getKeywordUppercaseDiagnostics(
 		const index = match.index;
 
 		if (isInComment(index, commentRanges)) {
+			continue;
+		}
+
+		if(isInTrace(index, text)) {
 			continue;
 		}
 
