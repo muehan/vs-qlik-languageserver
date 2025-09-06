@@ -1,5 +1,5 @@
 {
-	"name": "qlik-linter",
+	"name": "vs-qlik-languageserver",
 	"description": "Plugin is renamed, use this verion please: https://marketplace.visualstudio.com/items?itemName=andremuehle.vs-qlik-languageserver",
 	"author": "Mühle André",
 	"license": "GPL-3.0",
