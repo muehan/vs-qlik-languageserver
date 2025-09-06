@@ -1,3 +1,6 @@
+# Version 1.0.20
+- Added colored braces
+
 # Version 1.0.17
 - enhance trace to allow comments at the end
 - don't check for keywords in trace

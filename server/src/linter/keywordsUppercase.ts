@@ -93,6 +93,30 @@ function isInTrace(index: number, text: string): boolean {
     return false;
 }
 
+/**
+ * Checks if the given index is inside an XLSX import options line.
+ * Example:
+ * (ooxml, embedded labels, table is Sheet1);
+ */
+function IsXlsxImport(index: number, text: string): boolean {
+    // Find the line containing the index
+    const beforeIndex = text.slice(0, index);
+    const lineStart = beforeIndex.lastIndexOf("\n") + 1;
+    const lineEnd = text.indexOf("\n", index);
+    const line = text.slice(lineStart, lineEnd === -1 ? text.length : lineEnd).trim();
+
+    // Match lines that start with "(" and contain "ooxml"
+    return /^\(.*ooxml.*\);?$/i.test(line);
+}
+
+/**
+ * Linter function to check for Qlik keywords that are not uppercase.
+ * @param text The text content of the document.
+ * @param textDocument The TextDocument object.
+ * @param maxProblems The maximum number of problems to report.
+ * @param qlikKeywords An array of Qlik keywords to check against.
+ * @returns An array of Diagnostic objects for each keyword that is not uppercase.
+ */
 export function getKeywordUppercaseDiagnostics(
 	text: string,
 	textDocument: TextDocument,
@@ -110,17 +134,10 @@ export function getKeywordUppercaseDiagnostics(
 		const keyword = match[0];
 		const index = match.index;
 
-		if (isInComment(index, commentRanges)) {
-			continue;
-		}
-
-		if(isInTrace(index, text)) {
-			continue;
-		}
-
-		if (isInString(index, text)) {
-			continue;
-		}
+		if (isInComment(index, commentRanges)) {continue;}
+		if (isInTrace(index, text)) {continue;}
+		if (isInString(index, text)) {continue;}
+		if (IsXlsxImport(index, text)) {continue;}
 
 		if (keyword !== keyword.toUpperCase()) {
 			const diagnostic: Diagnostic = {
