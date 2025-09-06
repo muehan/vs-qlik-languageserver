@@ -1,5 +1,10 @@
 # Qlik language server extension
 
+PLease use this version of the Plugin: [vs-qlik-languageserver](https://marketplace.visualstudio.com/items?itemName=andremuehle.vs-qlik-languageserver).
+
+There is a other version published, with a old name of the same plugin.
+Don't use this [qlik-linter](https://marketplace.visualstudio.com/items?itemName=andremuehle.qlik-linter).
+
 ## Functionality
 
 This Language Server works for QVS files. It has the following language features:
