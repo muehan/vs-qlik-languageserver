@@ -1,0 +1,32 @@
+Airports:
+LOAD
+    *
+    ,sum(asdf)          AS sum_asdf
+    ,Floor(1,2,3,4)
+    ,Floor(IF(1=2,1,2)) AS Floor_test
+    ,[column1]          AS [column1]
+    ,[column2]   	    AS [column1-_test]
+FROM [lib://some/path/o/file.qvd](qvd);
+
+
+
+Airports:
+LOAD
+    *
+    ,sum(asdf)          AS sum_asdf
+    ,Floor(1,2,3,4)
+    ,Floor(IF(1=2,1,2)) AS Floor_test
+    ,[column1]          AS [column1]
+    ,[column2]   	    AS [column1-_test]
+FROM [lib://some/path/o/file.qvd](qvd);
+
+Airports:
+LOAD
+    *
+    ,sum(asdf)          AS sum_asdf
+    ,Floor(1,2,3,4)
+    ,Floor(IF(1=2,1,2)) AS Floor_test
+    ,[column1]          AS [column1]
+    ,[column2]   		AS [column1-_test]
+FROM [lib://some/path/o/file.qvd](qvd);
+

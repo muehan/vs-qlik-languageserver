@@ -1,5 +1,6 @@
 # Version 1.0.20
 - Added colored braces
+- ignore keywords in line with ooxml Excel imports
 
 # Version 1.0.17
 - enhance trace to allow comments at the end

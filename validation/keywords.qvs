@@ -14,5 +14,7 @@ LOAD
     Column2,
     Column3;
 LOAD *
-FROM [C:\Data\MyExcelFile.xlsx]
+FROM [C:\Data\MyExcelFile.xlsx] 
 (ooxml, embedded labels, table is Sheet1);
+
+(embedded labels, table is Sheet1)
