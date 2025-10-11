@@ -1,3 +1,6 @@
+# Version 1.0.21
+- Added keyword WHILE
+
 # Version 1.0.20
 - Added colored braces
 - ignore keywords in line with ooxml Excel imports
