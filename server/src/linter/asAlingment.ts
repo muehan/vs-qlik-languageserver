@@ -34,9 +34,12 @@ export function getAsAlignmentDiagnostics(
 	const loadRegex = /\bload\s/gi;
 	const fromResidentRegex = /(from|resident|autogenerate)\s/gi;
 	const asRegex = /[\s|"]{1}?AS\s/gi;
-	const commentRegex = /\/\/.*$|\/\*[\s\S]*?\*\//gm;
+	const commentStartRegex = /\/\*/;
+	const commentEndRegex = /\*\//;
 
 	let inLoad = false;
+	let inComment = false;
+	let skipCurrentLine = false;
 	let asIndexBlock = -1;
 	let documentIndex = 0;
 
@@ -52,6 +55,19 @@ export function getAsAlignmentDiagnostics(
 			break; // Stop if we reached the maximum number of problems
 		}
 
+		const commentMatch = line.match(commentStartRegex);
+		if (commentMatch) {
+			// start of block comment
+			inComment = true; 
+		}
+
+		const commentEndMatch = line.match(commentEndRegex);
+		if (commentEndMatch) {
+			// end of block comment
+			inComment = false;
+			skipCurrentLine = true; // skip the line where comment ends
+		}
+
 		const matchLoad = line.match(loadRegex);
 		if (matchLoad) {
 			// console.log(`Found LOAD statement at index ${documentIndex}`);
@@ -64,7 +80,7 @@ export function getAsAlignmentDiagnostics(
 		}
 
 		const asMatch = line.match(asRegex);
-		if (asMatch) {
+		if (asMatch && !inComment && !skipCurrentLine) {
 			const currentAsIndex = line.indexOf(asMatch[0]);
 			const fixedAsIndex = getVisualIndex(line, line.indexOf(asMatch[0]));
 
@@ -102,6 +118,7 @@ export function getAsAlignmentDiagnostics(
 			inLoad = false;
 		}
 
+		skipCurrentLine = false; // reset skip line
 		documentIndex += line.length + lineEnding; // +1 for the newline character
 	}
 

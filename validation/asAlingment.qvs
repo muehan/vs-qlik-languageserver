@@ -50,8 +50,9 @@ LOAD  //distinct
     ,'Y'                                AS "ASDritory Splice Active Flag"
     // ,b_Place_key                        AS %Splice
     ,asdfasdf
-    ,b_Place_key                        AS %PlaceKey
-    ,AutoNumber('B' & b_Place_key)      AS %PlaceKeyAuto
+    /*,b_Place_key                        AS %PlaceKey 
+        /*,b_Place_key                        AS %PlaceKey 
+    ,AutoNumber('B' & b_Place_key)        AS %PlaceKeyAuto */
     ,replace("ASD_code",'CH_','')       AS ASDritoryName
     
 FROM [lib://$(vG.asdf)vw_f_asdritory.qvd](qvd)
