@@ -16,9 +16,12 @@ export function multilineCommentToken(
 
 	const tokenData: ITokenData[] = [];
 
-	const multiLineCommentRegex = /\/\*[\s\S]*?\*\//g;
+  //const multiLineCommentRegex = /\/\*[\s\S]*?\*\//g;
+    const multiLineCommentRegex = /(?<![/\w])\/\*[\s\S]*?\*\//g;
+
 	let match;
 	while ((match = multiLineCommentRegex.exec(text)) !== null) {
+		console.log('Multiline comment match: ' + match[0]);
 		const startOffset = match.index;
 		const endOffset = match.index + match[0].length;
 

@@ -8,7 +8,7 @@ function getVisualIndex(
 	let tabSize = 4;
 	for (let i = 0; i <= asIndex; i++) {
 		const char = line.charAt(i);
-		console.log(`Char: '${char}', Index: ${index}, TabSize: ${tabSize}`);
+		//console.log(`Char: '${char}', Index: ${index}, TabSize: ${tabSize}`);
 		index += char === '\t' ? tabSize : 1;
 		tabSize = char === '\t' ? 4 : tabSize == 1 ? 4 : tabSize-1;
 	}

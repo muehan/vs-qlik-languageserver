@@ -18,3 +18,5 @@ FROM [C:\Data\MyExcelFile.xlsx]
 (ooxml, embedded labels, table is Sheet1);
 
 (embedded labels, table is Sheet1)
+
+next sourceFile;

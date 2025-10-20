@@ -1,5 +1,6 @@
 # Version 1.0.23
 - Add new keywords EACH and IN
+- Fix multi line comment with path match
 
 # Version 1.0.22
 - BUGFIX: as linter after autogenerate
