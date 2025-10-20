@@ -1,3 +1,6 @@
+# Version 1.0.23
+- Add new keywords EACH and IN
+
 # Version 1.0.22
 - BUGFIX: as linter after autogenerate
 - BUGFIX: as linter ignores single and multi line comments
