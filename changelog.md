@@ -1,6 +1,6 @@
 # Version 1.0.22
 - BUGFIX: as linter after autogenerate
-- BUGFIX: as linter ignores single line comments
+- BUGFIX: as linter ignores single and multi line comments
 - Add line and block comment config to language configuration
 
 # Version 1.0.21

@@ -11,3 +11,26 @@ asdf
 asdf
 asdf */
 
+
+for each sourceFile in FileList(vFiles & 'Vaccines/*.xlsx')
+    TABL:
+    LOAD
+        Field1 AS SomeField
+    FROM [$(surcefile)] (txt);
+
+FOR EACH vFile IN FileList(vFiles & 'Vaccines/*.xlsx')
+    TABL:
+    LOAD
+        Field1 AS SomeField
+    FROM [$(vFile)] (txt);
+
+Let vFiles= 'lib://TESTTEST/8.asdfasfd/ZZASJSD/';
+for each sourceFile in FileList(vFiles & 'asdfasf/*.xlsx')
+LOAD_products_ASDF_temp:
+LOAD
+if(index("A”,'asdf')<>0,’asdf',if(index("A”,'dfgh')<>0,’dfgh',if(index("A",'​')<>0,’rtzu',peek(productname)))) as productname,
+left(FileName(),6) as quarter,
+"N"
+FROM [$(sourceFile)] (ooxml, no labels, table is Hans_Muster);
+next sourceFile;
+
