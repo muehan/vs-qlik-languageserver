@@ -32,8 +32,9 @@ export function getAsAlignmentDiagnostics(
 		.split("\n");
 
 	const loadRegex = /\bload\s/gi;
-	const fromResidentRegex = /(from|resident)\s/gi;
+	const fromResidentRegex = /(from|resident|autogenerate)\s/gi;
 	const asRegex = /[\s|"]{1}?AS\s/gi;
+	const commentRegex = /\/\/.*$|\/\*[\s\S]*?\*\//gm;
 
 	let inLoad = false;
 	let asIndexBlock = -1;
@@ -66,6 +67,12 @@ export function getAsAlignmentDiagnostics(
 		if (asMatch) {
 			const currentAsIndex = line.indexOf(asMatch[0]);
 			const fixedAsIndex = getVisualIndex(line, line.indexOf(asMatch[0]));
+
+			const commentIndex = line.indexOf('//');
+			if(commentIndex !== -1 && currentAsIndex > commentIndex) {
+				documentIndex += line.length + lineEnding;
+				continue; // AS is in a comment
+			}
 
 			console.log(`Found AS at index ${currentAsIndex} (fixed index: ${fixedAsIndex})`);
 
