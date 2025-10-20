@@ -1,4 +1,10 @@
 {
+     "comments": {
+        // single line comment in qlik script. 
+        "lineComment": "//",
+        // Block comment in qlik script
+        "blockComment": [ "/*", "*/" ]
+    },
     "brackets": [
       ["{", "}"],
       ["[", "]"],
@@ -9,3 +15,4 @@
     "blockComment": ["/*", "*/"]
   }
 }
+
